@@ -1,7 +1,0 @@
-Summary Statistics
-cache hit rate: 75.54%
-p50 response time: 0.004946589469909668 seconds
-p99 response time: 0.011813657283782957 seconds
-
-Request split for this run
-NumSet: 48.38% Fact: 51.62%
