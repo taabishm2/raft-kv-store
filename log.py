@@ -39,6 +39,12 @@ class Log:
         self.flush_log_to_disk()
         return True
 
+    def is_this_log_older(self, current_term, other_log_term, other_log_len):
+        """
+        Used to decide whether to vote for a candidate
+        """
+        return current_term < other_log_term or (current_term == other_log_len and len(self.entries) < other_log_len)
+
     def get_earliest_uncommitted(self):
         """
         Get the earliest uncommitted log entry or None if it doesn't exist
