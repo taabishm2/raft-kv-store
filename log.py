@@ -40,21 +40,33 @@ class Log:
         return True
 
     def get_earliest_uncommitted(self):
+        """
+        Get the earliest uncommitted log entry or None if it doesn't exist
+        """
         if len(self.entries) == 0 or self.commit_index + 1 >= len(self.entries):
             return None
         return self.entries[self.commit_index + 1]
 
     def commit_log_entry(self):
+        """
+        Mark the earliest uncommitted log entry as committed (increment commit_index)
+        """
         if self.get_earliest_uncommitted() is None:
             raise ValueError("No valid log entry present to commit")
         self.commit_index += 1
 
     def get_earliest_unapplied(self):
+        """
+        Get the earliest unapplied log entry or None if it doesn't exist
+        """
         if len(self.entries) == 0 or self.last_applied + 1 >= len(self.entries):
             return None
         return self.entries[self.last_applied + 1]
 
     def mark_log_applied(self):
+        """
+        Mark the earliest unapplied log entry as applied (increment last_applied)
+        """
         if self.get_earliest_unapplied() is None:
             raise ValueError("No valid log entry present to apply")
         self.last_applied += 1
