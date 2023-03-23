@@ -1,0 +1,2 @@
+[ ] Create directory /raft-kv on root for storing persistent data
+[ ] sudo chmod a+rw /raft-kv/
