@@ -4,86 +4,51 @@ from collections import deque
 from concurrent import futures
 
 import grpc
-import numstore_pb2
-import numstore_pb2_grpc
+import kvstore_pb2
+import kvstore_pb2_grpc
 
 
 # Global variables
-VALUES_DICT = dict()
-VALUE_SUM = 0
-
-FACTORIAL_CACHE = dict()
-FACTORIAL_CACHE_MAX_SIZE = 10
-FACTORIAL_CACHE_QUEUE = deque()
+DATABASE_DICT = dict()
 
 LOCK = threading.Lock()
 
+class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
+    def Put(self, request, context):
+        global DATABASE_DICT
 
-class NumStoreServicer(numstore_pb2_grpc.NumStoreServicer):
-
-    def SetNum(self, request, context):
-        global VALUES_DICT, VALUE_SUM
+        print(f'put {request} {request.value}')
 
         # TODO: Do you need just one type of lock or two types (for setnum and fact)?
+        # read, write locks for database, ig.
         with LOCK:
-            if request.key in VALUES_DICT:
-                VALUE_SUM -= VALUES_DICT[request.key]
+            DATABASE_DICT[request.key] = request.value
 
-            VALUES_DICT[request.key] = request.value
-            VALUE_SUM += request.value
+        return kvstore_pb2.PutResponse(error="")
 
-            return numstore_pb2.SetNumResponse(total=VALUE_SUM)
-
-    def Fact(self, request, context):
-        global VALUES_DICT, FACTORIAL_CACHE
+    def Get(self, request, context):
+        global DATABASE_DICT
 
         key, val = request.key, None
-        factorial_val = None
 
         with LOCK:
-            if not key in VALUES_DICT:
-                return numstore_pb2.FactResponse(hit=False, error=f"Key:{key} not found.")
-            val = VALUES_DICT[key]
+            if not key in DATABASE_DICT:
+                return kvstore_pb2.GetResponse(value = "", hit=False, error=f"Key:{key} not found.")
+            val = DATABASE_DICT[key]
 
-            if key in FACTORIAL_CACHE:
-                factorial_val = FACTORIAL_CACHE[key]
-
-        if factorial_val is None:
-            factorial_val = factorial(val)
-
-        with LOCK:
-            update_factorial_cache(key, factorial_val)
+        print(f'get {key} {val}')
             
-        return numstore_pb2.FactResponse(value=factorial_val, hit=True)
-
-
-# Cache eviction policy: LRU
-def update_factorial_cache(key, val):
-    global FACTORIAL_CACHE, FACTORIAL_CACHE_MAX_SIZE, FACTORIAL_CACHE_QUEUE
-
-    if key in FACTORIAL_CACHE:
-        FACTORIAL_CACHE_QUEUE.remove(key)
-        FACTORIAL_CACHE_QUEUE.append(key)
-        return
-
-    if len(FACTORIAL_CACHE) >= FACTORIAL_CACHE_MAX_SIZE:
-        popped_key = FACTORIAL_CACHE_QUEUE.popleft()
-        FACTORIAL_CACHE.pop(popped_key)
-
-    FACTORIAL_CACHE[key] = val
-    FACTORIAL_CACHE_QUEUE.append(key)
-
+        return kvstore_pb2.GetResponse(value=str(val), hit=True)
 
 def server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    numstore_pb2_grpc.add_NumStoreServicer_to_server(
-        NumStoreServicer(), server)
+    kvstore_pb2_grpc.add_KVStoreServicer_to_server(
+        KVStoreServicer(), server)
     server.add_insecure_port('[::]:5440')
     print("Server listening on port:5440")
     server.start()
     server.wait_for_termination()
     print("Server terminated")
-
 
 if __name__ == '__main__':
     server()

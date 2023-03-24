@@ -2,8 +2,8 @@ import sys
 import grpc
 import random
 import numpy as np
-import numstore_pb2
-import numstore_pb2_grpc
+import kvstore_pb2
+import kvstore_pb2_grpc
 from time import time
 from threading import Lock, Thread
 
@@ -24,28 +24,29 @@ def random_requests():
 
     ADDR = f'127.0.0.1:{PORT}'
     channel = grpc.insecure_channel(ADDR)
-    stub = numstore_pb2_grpc.NumStoreStub(channel)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
         # Choosing key/value pair
         thread_key = str(random.randint(1, 100))
-        thread_value = random.randint(1, 15)
+        thread_value = str(random.randint(1, 15))
 
         # Choosing which request to send
         run_SetNum = random.choice([True, False])
         if run_SetNum:
-            # running SetNum request
+            # running Put request
             t1 = time()
-            resp = stub.SetNum(numstore_pb2.SetNumRequest(
+            resp = stub.Put(kvstore_pb2.PutRequest(
                 key=thread_key, value=thread_value))
             t2 = time()
             with LOCK:
                 REQ_TIMES.append(t2-t1)
 
         else:
-            # running Fact request
+            # running Get request
             t1 = time()
-            resp = stub.Fact(numstore_pb2.FactRequest(key=thread_key))
+            request = kvstore_pb2.GetRequest(key=thread_key)
+            resp = stub.Get(request)
             t2 = time()
             with LOCK:
                 FACT_COUNT += 1
@@ -75,6 +76,6 @@ if __name__ == '__main__':
 
     # Printing Summary Stats
     print(f'Summary Statistics')
-    print(f'cache hit rate: {round(np.count_nonzero(np.array(CACHE_HITS))/FACT_COUNT*100, 2)}%\np50 response time: {np.percentile(REQ_TIMES, q=50)} seconds\np99 response time: {np.percentile(REQ_TIMES, q=99)} seconds')
+    # print(f'cache hit rate: {round(np.count_nonzero(np.array(CACHE_HITS))/FACT_COUNT*100, 2)}%\np50 response time: {np.percentile(REQ_TIMES, q=50)} seconds\np99 response time: {np.percentile(REQ_TIMES, q=99)} seconds')
     print(
         f'\nRequest split for this run\nNumSet: {round((800-FACT_COUNT)/800*100,2)}% Fact: {round((FACT_COUNT)/800*100,2)}%')
