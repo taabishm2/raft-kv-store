@@ -22,8 +22,10 @@ def random_requests():
     global CACHE_HITS
     global FACT_COUNT
 
-    ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel(ADDR)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+    # ADDR = f'127.0.0.1:{PORT}'
+    # channel = grpc.insecure_channel(ADDR)
+    channel = grpc.insecure_channel('server:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
@@ -60,6 +62,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     PORT = int(sys.argv[1])
+    # print(len(sys.argv))
     counter = 0
     running_threads = []
 
