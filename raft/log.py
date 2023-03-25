@@ -12,8 +12,7 @@ class LogEntry:
         self.cmd_val = cmd_val
 
 
-class Log:
-
+class LogManager:
     def __init__(self):
         self.commit_index = 0  # Index of highest log entry known to be committed
         self.last_applied = 0  # Index of highest log entry applied to state machine

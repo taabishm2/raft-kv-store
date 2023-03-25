@@ -1,5 +1,5 @@
 # python grpc files.
-*_pb2.py
+*_pb2*.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
