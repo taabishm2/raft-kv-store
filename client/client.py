@@ -22,7 +22,6 @@ def random_requests():
     global CACHE_HITS
     global FACT_COUNT
 
-    stub = kvstore_pb2_grpc.KVStoreStub(channel)
     # ADDR = f'127.0.0.1:{PORT}'
     # channel = grpc.insecure_channel(ADDR)
     channel = grpc.insecure_channel('server:5440')

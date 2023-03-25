@@ -9,7 +9,7 @@ RUN pip3 install grpcio grpcio-tools
 RUN pip3 install protobuf==3.20.*
 
 COPY *.py /client/
-COPY ../kvstore.proto /client/
+COPY kvstore.proto /client/
 WORKDIR /client/
 
 RUN protoc -I=. --python_out=. ./kvstore.proto 
