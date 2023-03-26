@@ -1,4 +1,3 @@
-// This file contains proto specifications for raft server communication.
 syntax="proto3";
 
 service RaftProtocol {

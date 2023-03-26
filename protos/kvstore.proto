@@ -19,7 +19,7 @@ message GetRequest {
 }
 
 message GetResponse {
-    string value=1;
-    bool hit=2;
-    string error=3;
+    bool key_exists=1;
+    string key=2;
+    string value=3;
 }
