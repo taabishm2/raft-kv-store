@@ -2,6 +2,7 @@ import threading
 from math import factorial
 from collections import deque
 from concurrent import futures
+from raft.node import RaftNode
 
 import grpc
 import kvstore_pb2
@@ -14,6 +15,10 @@ DATABASE_DICT = dict()
 LOCK = threading.Lock()
 
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
+    def __init__(self, name):
+        super().__init__()
+        # self.raft_node = RaftNode(name)
+
     def Put(self, request, context):
         global DATABASE_DICT
 
@@ -40,15 +45,17 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             
         return kvstore_pb2.GetResponse(value=str(val), hit=True)
 
-def server():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    kvstore_pb2_grpc.add_KVStoreServicer_to_server(
-        KVStoreServicer(), server)
-    server.add_insecure_port('[::]:5440')
+def run_server():
+    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    
+    servicer = KVStoreServicer("leader")
+    kvstore_pb2_grpc.add_KVStoreServicer_to_server(servicer, grpc_server)
+    grpc_server.add_insecure_port('[::]:5440')
+    
     print("Server listening on port:5440")
-    server.start()
-    server.wait_for_termination()
+    grpc_server.start()
+    grpc_server.wait_for_termination()
     print("Server terminated")
 
 if __name__ == '__main__':
-    server()
+    run_server()

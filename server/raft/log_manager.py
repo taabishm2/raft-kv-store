@@ -1,9 +1,10 @@
 import os
 import pickle
 
-RAFT_BASE_DIR = '/raft-kv'
-RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
+from threading import Lock
 
+RAFT_BASE_DIR = './raft-kv'
+RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
 
 class LogEntry:
     def __init__(self, term, cmd_key, cmd_val):
@@ -11,12 +12,12 @@ class LogEntry:
         self.cmd_key = cmd_key
         self.cmd_val = cmd_val
 
-
 class LogManager:
     def __init__(self):
         self.commit_index = 0  # Index of highest log entry known to be committed
         self.last_applied = 0  # Index of highest log entry applied to state machine
         self.entries = list()
+        self.lock = Lock()
 
         if not os.path.exists(RAFT_LOG_PATH):
             self.flush_log_to_disk()  # Create empty log file
@@ -24,6 +25,16 @@ class LogManager:
         file = open(RAFT_LOG_PATH, 'rb')
         self.entries = pickle.load(file)
         file.close()
+
+    def append(self, log_entry):
+        """
+        append entry to the node's replicated log. This method is to be used by the leader
+        to populate its own log. Returns last log index if successful.
+        """
+        with self.lock:
+            self.entries.append(log_entry)
+            
+        return len(self.entries)
 
     def overwrite(self, start_index, log_entry_list, previous_term):
         """
