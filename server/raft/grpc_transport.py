@@ -20,3 +20,8 @@ class Transport:
         :rtype: dict
         '''
         # TODO: Complete function
+        channel = grpc.insecure_channel(peer)
+        stub = raft_pb2_grpc.RaftProtocol(channel)
+        request = raft_pb2.AERequest(is_heart_beat=True)
+        # send the request
+        response = stub.AppendEntries(request)
