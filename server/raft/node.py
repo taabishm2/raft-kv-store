@@ -1,6 +1,8 @@
 
 import enum
 from .log_manager import *
+from .election import *
+from .grpc_transport import *
 
 # Using enum class create enumerations
 class NodeRole(enum.Enum):
@@ -16,6 +18,9 @@ class RaftNode:
         self.role = NodeRole.Follower
 
         self.log_manager = LogManager()
+        self.transport = Transport()
+        self.election = Election(
+            node=self, transport=self.transport, store=self.__store, queue=self.q)
 
     def serve_put_request(self, key, value):
         """
