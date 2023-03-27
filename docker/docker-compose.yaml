@@ -1,0 +1,19 @@
+services:
+    server:
+        image: kvstore
+        volumes:
+            - "../server/server.sh:/start.sh"
+            - "../server/raft/logcache:/raft-kv-store/server/raft/logcache"
+        ports:
+            - "127.0.0.1:5440:5440"
+
+    client:
+        image: kvstore
+        volumes:
+            - "../client/client.sh:/start.sh"
+            - "../server/raft/logcache:/raft-kv-store/server/raft/logcache"
+        # client container can access the localhost of the computer.
+        # network_mode: host
+        # should wait until server is ready before launching.
+        depends_on:
+            - server

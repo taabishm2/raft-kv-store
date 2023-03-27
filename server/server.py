@@ -2,30 +2,38 @@ import threading
 from math import factorial
 from collections import deque
 from concurrent import futures
-from raft.node import RaftNode
+# from raft.node import RaftNode
 
+import sys
 import grpc
+import threading
+
+sys.path.append('../')
+
+from concurrent import futures
 import kvstore_pb2
 import kvstore_pb2_grpc
 
+# sys.path.append('./raft')
 
 # Global variables
 DATABASE_DICT = dict()
-
 LOCK = threading.Lock()
 
+
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
-    def __init__(self, name):
+    def __init__(self):
         super().__init__()
-        self.raft_node = RaftNode(name)
+        # self.raft_node = RaftNode(name)
 
     def Put(self, request, context):
         global DATABASE_DICT
+        print(f"[LOG]: PUT {request.key}:{request.value}")
 
         print(f'put {request} {request.value}')
 
         # Serve put request.
-        self.raft_node.serve_put_request(request.key, request.value)
+        # self.raft_node.serve_put_request(request.key, request.value)
 
         # TODO: Do you need just one type of lock or two types (for setnum and fact)?
         # read, write locks for database, ig.
@@ -36,29 +44,31 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def Get(self, request, context):
         global DATABASE_DICT
-
-        key, val = request.key, None
+        print(f"[LOG]: GET {request.key}")
 
         with LOCK:
-            if not key in DATABASE_DICT:
-                return kvstore_pb2.GetResponse(value = "", hit=False, error=f"Key:{key} not found.")
-            val = DATABASE_DICT[key]
+            if request.key in DATABASE_DICT:
+                return kvstore_pb2.GetResponse(key_exists=True, key=request.key, value=DATABASE_DICT[request.key])
+            return kvstore_pb2.GetResponse(key_exists=False, key=request.key, value=None)
 
-        print(f'get {key} {val}')
-            
-        return kvstore_pb2.GetResponse(value=str(val), hit=True)
 
-def run_server():
-    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    
-    servicer = KVStoreServicer("leader")
-    kvstore_pb2_grpc.add_KVStoreServicer_to_server(servicer, grpc_server)
-    grpc_server.add_insecure_port('[::]:5440')
-    
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), server)
+
+    server.add_insecure_port('[::]:5440')
     print("Server listening on port:5440")
-    grpc_server.start()
-    grpc_server.wait_for_termination()
+
+    f = open("/raft-kv-store/server/raft/server.out", "w")
+    f.write("Server started\n")
+    server.start()
+    server.wait_for_termination()
+
+    f.write("Server terminated")
+    f.close()
+
     print("Server terminated")
 
+
 if __name__ == '__main__':
-    run_server()
+    serve()
