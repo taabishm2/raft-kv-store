@@ -17,12 +17,15 @@ LOCK = threading.Lock()
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
     def __init__(self, name):
         super().__init__()
-        # self.raft_node = RaftNode(name)
+        self.raft_node = RaftNode(name)
 
     def Put(self, request, context):
         global DATABASE_DICT
 
         print(f'put {request} {request.value}')
+
+        # Serve put request.
+        self.raft_node.serve_put_request(request.key, request.value)
 
         # TODO: Do you need just one type of lock or two types (for setnum and fact)?
         # read, write locks for database, ig.

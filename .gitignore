@@ -1,6 +1,9 @@
 # python grpc files.
 *_pb2*.py
 
+# Raft log file.
+raft-kv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

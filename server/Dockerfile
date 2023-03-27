@@ -16,5 +16,6 @@ WORKDIR /server/
 RUN protoc -I=. --python_out=. ./kvstore.proto
 RUN python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. kvstore.proto
 
+RUN sudo chmod a+rw ./raft-kv/
 
 CMD ["python3", "-u", "./server.py"]

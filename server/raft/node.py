@@ -23,7 +23,7 @@ class RaftNode:
 
         #TODO: In the first version, leader simply appends to its own log and returns.
         """
-        log_item = LogEntry(key, value)
+        log_item = LogEntry(self.current_term, key, value)
         self.log_manager.append(log_item)
 
         return True

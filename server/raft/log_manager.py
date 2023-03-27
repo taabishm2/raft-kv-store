@@ -18,12 +18,19 @@ class LogManager:
         self.last_applied = 0  # Index of highest log entry applied to state machine
         self.entries = list()
         self.lock = Lock()
+        self.load_entries() # Load entries from stable store to memory.
+
+    def load_entries(self):
+        if not os.path.exists(RAFT_BASE_DIR):
+            os.makedirs(RAFT_BASE_DIR) # Create empty 
 
         if not os.path.exists(RAFT_LOG_PATH):
             self.flush_log_to_disk()  # Create empty log file
 
         file = open(RAFT_LOG_PATH, 'rb')
         self.entries = pickle.load(file)
+        num_entries = len(self.entries)
+        print(f'Loaded {num_entries} entries')
         file.close()
 
     def append(self, log_entry):
@@ -33,6 +40,7 @@ class LogManager:
         """
         with self.lock:
             self.entries.append(log_entry)
+            self.flush_log_to_disk()
             
         return len(self.entries)
 

@@ -8,8 +8,8 @@ from time import time
 from threading import Lock, Thread
 
 # Globals
-THREAD_COUNT = 8
-REQUEST_COUNT = 100
+THREAD_COUNT = 1
+REQUEST_COUNT = 1
 PORT = 0
 LOCK = Lock()
 CACHE_HITS = []
@@ -22,9 +22,9 @@ def random_requests():
     global CACHE_HITS
     global FACT_COUNT
 
-    # ADDR = f'127.0.0.1:{PORT}'
-    # channel = grpc.insecure_channel(ADDR)
-    channel = grpc.insecure_channel('server:5440')
+    ADDR = f'127.0.0.1:{PORT}'
+    channel = grpc.insecure_channel(ADDR)
+    # channel = grpc.insecure_channel('server:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
@@ -33,7 +33,8 @@ def random_requests():
         thread_value = str(random.randint(1, 15))
 
         # Choosing which request to send
-        run_SetNum = random.choice([True, False])
+        # run_SetNum = random.choice([True, False])
+        run_SetNum = (i == 0)
         if run_SetNum:
             # running Put request
             t1 = time()
