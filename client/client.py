@@ -19,7 +19,7 @@ REQ_TIMES = []
 def random_requests():
     global REQ_TIMES
 
-    channel = grpc.insecure_channel('localhost:5440')
+    channel = grpc.insecure_channel('server:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
