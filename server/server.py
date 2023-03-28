@@ -1,6 +1,4 @@
 import threading
-from math import factorial
-from collections import deque
 from concurrent import futures
 # from raft.node import RaftNode
 

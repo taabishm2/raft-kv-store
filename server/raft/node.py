@@ -1,8 +1,11 @@
+""" Main Raft class.
+"""
 
 import enum
 from .log_manager import *
 from .election import *
 from .grpc_transport import *
+from .transport import *
 
 # Using enum class create enumerations
 class NodeRole(enum.Enum):
@@ -11,7 +14,7 @@ class NodeRole(enum.Enum):
     Leader = 3
 
 class RaftNode:
-    def __init__(self, name):
+    def __init__(self, name, peers):
         self.name = name
 
         self.current_term = 0
