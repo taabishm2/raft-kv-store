@@ -1,4 +1,4 @@
-""" 
+"""
 This file contains the transport class that handles communication
 between raft nodes.
 """
@@ -13,19 +13,19 @@ import raft_pb2_grpc
 from .protocol_servicer import *
 
 class Transport:
-    def __init__(self, peer_ips, log_manager):
+    def __init__(self, peers, log_manager):
         # log manager.
         self.log_manager = log_manager
 
         # list of grpc clients.
-        self.peer_ips = peer_ips
+        self.peer_ips = peers
 
         # Initialize grpc client stubs to communicate with each client.
-        self.stubs = list()
+        self.peer_stubs = list()
 
         for ip in self.peer_ips:
             channel = grpc.insecure_channel(ip)
-            self.stubs.append(channel)
+            self.peer_stubs.append(channel)
 
         # Start raft server.
         Thread(target=self.raft_server).start()
@@ -60,5 +60,16 @@ class Transport:
         request = raft_pb2.AERequest(is_heart_beat=True)
         # send the request
         response = stub.AppendEntries(request)
-        
 
+    def push_append_entry(self, peer_stub, entry, index):
+        return 0
+
+    def append_entry_to_peers(self, entry, index):
+        '''
+        This routine pushes the append entry to all peers.
+        '''
+        num_succ = 0
+        for stub in self.peer_stubs:
+            num_succ += self.push_append_entry(stub, entry, index)
+
+        return num_succ

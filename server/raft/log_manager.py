@@ -42,7 +42,7 @@ class LogManager:
             self.entries.append(log_entry)
             self.flush_log_to_disk()
             
-        return len(self.entries)
+            return len(self.entries)
 
     def overwrite(self, start_index, log_entry_list, previous_term):
         """
@@ -99,3 +99,6 @@ class LogManager:
         log_file = open(RAFT_LOG_PATH, 'wb')
         pickle.dump(self.entries, log_file)
         log_file.close()
+
+    def console_log(self, log):
+        print(f"[LOG]: {log}")

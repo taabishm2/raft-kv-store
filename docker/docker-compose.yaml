@@ -1,11 +1,27 @@
 services:
-    server:
+    server-1:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache:/raft-kv-store/server/raft/logcache"
+            - "../server/raft/logcache/server1:/raft-kv-store/server/raft/logcache"
         ports:
             - "127.0.0.1:5440:5440"
+        environment:
+            - NAME=server-1
+            - IS_LEADER=TRUE
+            - PEER_IPS='server-2:5440'
+
+    server-2:
+        image: kvstore
+        volumes:
+            - "../server/server.sh:/start.sh"
+            - "../server/raft/logcache/server2:/raft-kv-store/server/raft/logcache"
+        ports:
+            - "127.0.0.1:5441:5440"
+        environment:
+            - NAME=server-2
+            - IS_LEADER=FALSE
+            - PEER_IPS='server-1:5440'
 
     client:
         image: kvstore
@@ -16,4 +32,5 @@ services:
         # network_mode: host
         # should wait until server is ready before launching.
         depends_on:
-            - server
+            - server-1
+            - server-2

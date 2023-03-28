@@ -11,7 +11,7 @@ from threading import Lock, Thread
 
 # Globals
 THREAD_COUNT = 1
-REQUEST_COUNT = 6
+REQUEST_COUNT = 10
 LOCK = Lock()
 REQ_TIMES = []
 
@@ -20,13 +20,13 @@ def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel('server:5440')
+    channel = grpc.insecure_channel('server-1:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
         # Choosing key/value pair
-        thread_key = str(random.randint(1, 100))
-        thread_value = str(random.randint(1, 15))
+        thread_key = str(random.randint(1, 3))
+        thread_value = str(random.randint(1, 40))
 
         # Choosing which request to send
         run_set_num = random.choice([True, False])

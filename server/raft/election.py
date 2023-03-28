@@ -1,12 +1,15 @@
-import time
-from threading import Lock, Thread
-from queue import Queue
 import enum
+import os
+import time
+
+from queue import Queue
+from threading import Lock, Thread
+from raft import config as config
 
 # from .config import config 
 from .log_manager import *
 from .transport import *
-from raft import config as config
+
 
 # Using enum class create enumerations
 class NodeRole(enum.Enum):
@@ -17,10 +20,22 @@ class NodeRole(enum.Enum):
 class Election:
     def __init__(self, term, transport: Transport):
         self.timeout_thread = None
-        self.role = NodeRole.Follower
+        self.role = self.get_init_role()
         self.term = term
         self.__transport = transport
         self.__lock = Lock()
+
+        print(f"I am {self.role}")
+
+    def get_init_role(self):
+        is_leader = os.environ['IS_LEADER']
+        if is_leader == "TRUE":
+            return NodeRole.Leader
+
+        return NodeRole.Follower
+
+    def is_node_leader(self):
+        return (self.role == NodeRole.Leader)
 
     def init_heartbeat(self):
         '''
