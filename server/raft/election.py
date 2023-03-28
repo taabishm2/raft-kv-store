@@ -1,20 +1,24 @@
 import time
 from threading import Lock, Thread
 from queue import Queue
+import enum
 
 # from .config import config 
 from .log_manager import *
-from .grpc_transport import *
-from .node import RaftNode
-from .node import NodeRole
+from .transport import *
 from raft import config as config
 
+# Using enum class create enumerations
+class NodeRole(enum.Enum):
+    Follower = 1
+    Candidate = 2
+    Leader = 3
+
 class Election:
-    def __init__(self, node: RaftNode, transport: Transport):
+    def __init__(self, term, transport: Transport):
         self.timeout_thread = None
-        self.role = node.role
-        self.term = node.current_term
-        self.__node = node
+        self.role = NodeRole.Follower
+        self.term = term
         self.__transport = transport
         self.__lock = Lock()
 
@@ -22,7 +26,7 @@ class Election:
         '''
         Initiate periodic heartbeats to the follower nodes if node is leader
         '''
-        if self.__node.role != NodeRole.Leader:
+        if self.role != NodeRole.Leader:
             return
         print(f"Node is leader for the term {self.term}")
         print('sending heartbeat to peers')
@@ -100,6 +104,7 @@ class Election:
             delta = self.election_time - time.time()
             if delta < 0:
                 # TODO: START ELECTION!
+                print("TODO")
             else:
                 time.sleep(delta)
 

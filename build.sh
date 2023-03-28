@@ -16,7 +16,7 @@ docker build -t kvstore -f ./docker/Dockerfile .
 
 # orchestrate containers
 echo '|||||                         (4 of 5) Running docker compose\r\c'
-docker compose -f ./docker/docker-compose.yaml up -d
+docker compose -f ./docker/docker-compose.yaml up
 
 echo '||||||                        (5 of 5) Finished\r\c'
 echo '\n'

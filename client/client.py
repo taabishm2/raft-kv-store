@@ -10,8 +10,8 @@ import kvstore_pb2_grpc
 from threading import Lock, Thread
 
 # Globals
-THREAD_COUNT = 8
-REQUEST_COUNT = 100
+THREAD_COUNT = 1
+REQUEST_COUNT = 6
 LOCK = Lock()
 REQ_TIMES = []
 
@@ -20,7 +20,6 @@ def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel(ADDR)
     channel = grpc.insecure_channel('server:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
@@ -41,7 +40,7 @@ def random_requests():
         else:
             t1 = time()
             resp = stub.Get(kvstore_pb2.GetRequest(key=thread_key))
-            print(resp.value)
+            print(f'[LOG] for {thread_key}, got {resp.value} {resp.key_exists}')
             t2 = time()
             with LOCK:
                 REQ_TIMES.append(t2 - t1)

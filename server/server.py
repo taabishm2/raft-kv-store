@@ -1,6 +1,5 @@
 import threading
 from concurrent import futures
-# from raft.node import RaftNode
 
 import sys
 import grpc
@@ -8,6 +7,7 @@ import threading
 
 sys.path.append('../')
 
+from raft.node import RaftNode
 from concurrent import futures
 import kvstore_pb2
 import kvstore_pb2_grpc
@@ -20,15 +20,16 @@ LOCK = threading.Lock()
 
 
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
-        # self.raft_node = RaftNode(name)
+
+        print(f"Starting kv servicer {name}")
+        peers = () #TODO(rahul) Populate this somehow.
+        self.raft_node = RaftNode(name, peers)
 
     def Put(self, request, context):
         global DATABASE_DICT
         print(f"[LOG]: PUT {request.key}:{request.value}")
-
-        print(f'put {request} {request.value}')
 
         # Serve put request.
         # self.raft_node.serve_put_request(request.key, request.value)
@@ -52,7 +53,8 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
-    kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), server)
+    kvstore_pb2_grpc.add_KVStoreServicer_to_server(
+        KVStoreServicer("leader"), server)
 
     server.add_insecure_port('[::]:5440')
     print("Server listening on port:5440")

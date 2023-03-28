@@ -1,29 +1,20 @@
 """ Main Raft class.
 """
 
-import enum
 from .log_manager import *
 from .election import *
-from .grpc_transport import *
 from .transport import *
-
-# Using enum class create enumerations
-class NodeRole(enum.Enum):
-    Follower = 1
-    Candidate = 2
-    Leader = 3
+from .transport import *
 
 class RaftNode:
     def __init__(self, name, peers):
         self.name = name
 
         self.current_term = 0
-        self.role = NodeRole.Follower
 
         self.log_manager = LogManager()
-        self.transport = Transport()
-        self.election = Election(
-            node=self, transport=self.transport, store=self.__store, queue=self.q)
+        self.transport = Transport(peers, self.log_manager)
+        self.election = Election(self.current_term, transport=self.transport)
 
     def serve_put_request(self, key, value):
         """
