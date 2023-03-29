@@ -4,14 +4,11 @@ import datetime;
 
 from threading import Lock
 
+import raft_pb2
+import raft_pb2_grpc
+
 RAFT_BASE_DIR = './raft-kv'
 RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
-
-class LogEntry:
-    def __init__(self, term, cmd_key, cmd_val):
-        self.term = term
-        self.cmd_key = cmd_key
-        self.cmd_val = cmd_val
 
 class RaftState:
     def __init__(self):
@@ -21,6 +18,34 @@ class RaftState:
         self.voted_for_ip = ""
         self.state = {}
         self.entries = list()
+
+######################### LogEntry class ##########################
+
+class LogEntry:
+    def __init__(self, term, cmd_key, cmd_val):
+        self.term = term
+        self.cmd_key = cmd_key
+        self.cmd_val = cmd_val
+
+def to_grpc_log_entry(entry):
+    log_entry = raft_pb2.LogEntry(
+            log_term = int(entry.term),
+            command = raft_pb2.WriteCommand(
+                key = entry.cmd_key,
+                value = entry.cmd_val,
+            )
+        )
+    
+    return log_entry
+
+def from_grpc_log_entry(entry):
+    write_command = entry.command
+    log_entry = LogEntry(entry.log_term,
+        write_command.key, write_command.value)
+    
+    return log_entry
+
+######################### LogManager class ##########################
 
 class LogManager:
     def __init__(self, name):
@@ -53,7 +78,7 @@ class LogManager:
         file = open(RAFT_LOG_PATH, 'rb')
         self.entries = pickle.load(file)
         num_entries = len(self.entries)
-        self.console_log(f'Loaded {num_entries} entries')
+        self.output_log(f'Loaded {num_entries} entries')
         file.close()
 
     def append(self, log_entry):
@@ -76,8 +101,10 @@ class LogManager:
                 (start_index > 0 and (self.entries[start_index - 1].term != previous_term)):
             return False
 
-        self.entries[start_index:] = log_entry_list
-        self.flush_log_to_disk()
+        with self.lock:
+            self.entries[start_index:] = log_entry_list
+            self.flush_log_to_disk()
+
         return True
 
     def is_this_log_older(self, current_term, other_log_term, other_log_len):
@@ -131,5 +158,5 @@ class LogManager:
         pickle.dump(self.entries, log_file)
         log_file.close()
 
-    def console_log(self, log):
+    def output_log(self, log):
         print(f"[LOG]: {datetime.datetime.now()} {log}")

@@ -3,14 +3,16 @@ This file contains the transport class that handles communication
 between raft nodes.
 """
  
-import grpc
-
-from threading import Thread
 from concurrent import futures
+from threading import Thread
 
+import grpc
 import raft_pb2
 import raft_pb2_grpc
+
+from .log_manager import *
 from .protocol_servicer import *
+
 
 class Transport:
     def __init__(self, peers, log_manager):
@@ -69,7 +71,7 @@ class Transport:
 
     ############### AppendEntries RPC ##########################
 
-    def push_append_entry(self, peer_stub, log_entry, index):
+    def push_append_entry(self, peer_stub, index, entry: LogEntry):
         prev_index = index - 1
         prev_log_entry = self.log_manager.get_log_at_index(prev_index)
         
@@ -78,15 +80,22 @@ class Transport:
             term = self.log_manager.get_current_term(),
             leader_id = self.log_manager.get_name(),
             start_index = index,
-            prev_log_index = index - 1,
+            prev_log_index = prev_index,
             prev_log_term = prev_log_entry.term,
             is_heart_beat=False,
         )
-        # request.entries.extend([log_entry])
+        log_entry = raft_pb2.LogEntry(
+            log_term = int(entry.term),
+            command = raft_pb2.WriteCommand(
+                key = entry.cmd_key,
+                value = entry.cmd_val,
+            )
+        )
+        request.entries.append(log_entry)
 
         resp = peer_stub.AppendEntries(request)
         print(f"Append entries resp {resp}")
-        
+
         return 0
 
     def append_entry_to_peers(self, entry, index):
@@ -95,6 +104,6 @@ class Transport:
         '''
         num_succ = 0
         for stub in self.peer_stubs:
-            num_succ += self.push_append_entry(stub, entry, index)
+            num_succ += self.push_append_entry(stub, index, entry)
 
         return num_succ

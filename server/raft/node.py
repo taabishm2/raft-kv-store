@@ -41,7 +41,7 @@ class RaftNode:
 
         # Append log item to current node's log.
         index = self.__log_manager.append(log_item)
-        self.__log_manager.console_log("Appended entry to leader's log.")
+        self.__log_manager.output_log("Appended entry to leader's log.")
 
         # Push append entries to other peers.
         self.__transport.append_entry_to_peers(log_item, index)
