@@ -25,8 +25,6 @@ class Election:
         self.__transport = transport
         self.__lock = Lock()
 
-        print(f"I am {self.role}")
-
     def get_init_role(self):
         is_leader = os.environ['IS_LEADER']
         if is_leader == "TRUE":

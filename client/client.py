@@ -1,6 +1,7 @@
 import sys
 import grpc
 import random
+from time import sleep
 
 sys.path.append('../')
 
@@ -49,6 +50,8 @@ def random_requests():
 if __name__ == '__main__':
     counter = 0
     running_threads = []
+
+    sleep(2)
 
     # Start all threads
     while counter < THREAD_COUNT:

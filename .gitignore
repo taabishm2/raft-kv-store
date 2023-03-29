@@ -3,6 +3,7 @@
 
 # Raft log file.
 raft-kv/
+logcache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -25,10 +25,14 @@ class Transport:
 
         for ip in self.peer_ips:
             channel = grpc.insecure_channel(ip)
-            self.peer_stubs.append(channel)
+            stub = raft_pb2_grpc.RaftProtocolStub(channel)
+
+            self.peer_stubs.append(stub)
 
         # Start raft server.
         Thread(target=self.raft_server).start()
+
+    ############### gRPC server ##########################
 
     def raft_server(self):
         grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
@@ -37,10 +41,12 @@ class Transport:
         raft_pb2_grpc.add_RaftProtocolServicer_to_server(servicer, grpc_server)
         grpc_server.add_insecure_port('[::]:4000')
         
-        print("Raft Node server listening on port:4000")
+        print("Raft server listening on port:4000")
         grpc_server.start()
         grpc_server.wait_for_termination()
         print("Server terminated")
+
+    ############### Election ##########################
 
     def heartbeat(self, peer: str, message: dict = None) -> dict:
         '''
@@ -61,7 +67,26 @@ class Transport:
         # send the request
         response = stub.AppendEntries(request)
 
-    def push_append_entry(self, peer_stub, entry, index):
+    ############### AppendEntries RPC ##########################
+
+    def push_append_entry(self, peer_stub, log_entry, index):
+        prev_index = index - 1
+        prev_log_entry = self.log_manager.get_log_at_index(prev_index)
+        
+        # Prepare appendRPC request.
+        request = raft_pb2.AERequest(
+            term = self.log_manager.get_current_term(),
+            leader_id = self.log_manager.get_name(),
+            start_index = index,
+            prev_log_index = index - 1,
+            prev_log_term = prev_log_entry.term,
+            is_heart_beat=False,
+        )
+        # request.entries.extend([log_entry])
+
+        resp = peer_stub.AppendEntries(request)
+        print(f"Append entries resp {resp}")
+        
         return 0
 
     def append_entry_to_peers(self, entry, index):

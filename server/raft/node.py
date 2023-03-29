@@ -18,23 +18,26 @@ class RaftNode:
             raise 'env variable PEER_IPS missing!!'
         peers = os.environ['PEER_IPS'].split(",")
 
+        # Initialize all fields.
         self.current_term = 0
-        
-        print(f"Raft Node up.\n Name: {self.name}\n Peers: {peers}")
-        self.__log_manager = LogManager()
+        self.__log_manager = LogManager(self.name)
         self.__transport = Transport(peers, self.__log_manager)
         self.election = Election(self.current_term, transport=self.__transport)
+
+        print(f"Raft Node up.\n Name: {self.name}\n current term: {self.current_term}\n"+
+            f"Peers: {peers}")
 
     def serve_put_request(self, key, value):
         """
         Service the put request from client.
 
+        Returns success ack, else errMsg.
         """
         if not self.election.is_node_leader():
             # TODO: Redirect to leader node.
             return False, "node not leader"
         
-        log_item = LogEntry(self.current_term, key, value)
+        log_item = self.__log_manager.get_log_entry(key, value)
 
         # Append log item to current node's log.
         index = self.__log_manager.append(log_item)
@@ -44,4 +47,3 @@ class RaftNode:
         self.__transport.append_entry_to_peers(log_item, index)
 
         return True, ""
-

@@ -1,3 +1,6 @@
+'''
+This file services raft protocol rpcs.
+'''
 import raft_pb2
 import raft_pb2_grpc
 
@@ -15,10 +18,6 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def AppendEntries(self, request, context):
         """AppendEntries for leader raft node to override/append its log entries into followers.
         """
-        print(f'Got AppendEntries request {request.start_index}, {request.term}')
+        print(f'Got AppendEntries request {request.start_index} {request.term} {request.prev_log_index} {request.prev_log_term}')
 
-        """
-        Check if previous entry matches, and overwrite. Else, return failure.
-        """
-
-        return None
+        return raft_pb2.AEResponse()

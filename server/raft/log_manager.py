@@ -1,5 +1,6 @@
 import os
 import pickle
+import datetime;
 
 from threading import Lock
 
@@ -12,13 +13,35 @@ class LogEntry:
         self.cmd_key = cmd_key
         self.cmd_val = cmd_val
 
-class LogManager:
+class RaftState:
     def __init__(self):
+        self.current_term = 0
         self.commit_index = 0  # Index of highest log entry known to be committed
         self.last_applied = 0  # Index of highest log entry applied to state machine
+        self.voted_for_ip = ""
+        self.state = {}
+        self.entries = list()
+
+class LogManager:
+    def __init__(self, name):
+        self.name = name
+
+        self.current_term = 1
+        self.commit_index = 0  # Index of highest log entry known to be committed
+        self.last_applied = 0  # Index of highest log entry applied to state machine
+        self.voted_for_ip = ""
         self.entries = list()
         self.lock = Lock()
         self.load_entries() # Load entries from stable store to memory.
+
+    def get_log_entry(self, key, value):
+        return LogEntry(self.current_term, key, value)
+
+    def get_current_term(self):
+        return self.current_term
+
+    def get_name(self):
+        return self.name
 
     def load_entries(self):
         if not os.path.exists(RAFT_BASE_DIR):
@@ -28,7 +51,7 @@ class LogManager:
             self.flush_log_to_disk()  # Create empty log file
 
         file = open(RAFT_LOG_PATH, 'rb')
-        self.entries = pickle.load(file)
+        self.state = pickle.load(file)
         num_entries = len(self.entries)
         print(f'Loaded {num_entries} entries')
         file.close()
@@ -62,6 +85,14 @@ class LogManager:
         Used to decide whether to vote for a candidate
         """
         return current_term < other_log_term or (current_term == other_log_len and len(self.entries) < other_log_len)
+
+    def get_log_at_index(self, index):
+        """
+        Get the earliest uncommitted log entry or None if it doesn't exist
+        """
+        if index >= len(self.entries):
+            return None
+        return self.entries[index]
 
     def get_earliest_uncommitted(self):
         """
@@ -101,4 +132,4 @@ class LogManager:
         log_file.close()
 
     def console_log(self, log):
-        print(f"[LOG]: {log}")
+        print(f"[LOG]: {datetime.datetime.now()} {log}")
