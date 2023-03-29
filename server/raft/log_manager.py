@@ -51,9 +51,9 @@ class LogManager:
             self.flush_log_to_disk()  # Create empty log file
 
         file = open(RAFT_LOG_PATH, 'rb')
-        self.state = pickle.load(file)
+        self.entries = pickle.load(file)
         num_entries = len(self.entries)
-        print(f'Loaded {num_entries} entries')
+        self.console_log(f'Loaded {num_entries} entries')
         file.close()
 
     def append(self, log_entry):
