@@ -48,9 +48,10 @@ class Election:
         run endlessly
         '''
         while log_manager.role != NodeRole.Leader:
+            # TODO: condition looks wrong. method isn't implemented in log_manager
             delta = log_manager.election_time() - time.time()
             if delta < 0:
-                # TODO: START ELECTION! Tabish
+                self.trigger_election()
                 print("TODO")
             else:
                 time.sleep(delta)
@@ -67,6 +68,23 @@ class Election:
             self.timeout_thread.start()
         except Exception as e:
             raise e
+
+    def trigger_election(self):
+        globals.current_term += 1
+        # todo: how to vote for self?
+        # send request vote rpc to all peers
+
+        running_threads = [Thread(target=self.request_vote, args=(peer,)).start() for peer in transport.peer_ips]
+
+
+        # Case 1: got majority
+        # Case 2: got heartbeat inbetween
+        # Case 3: election timeout (split vote)
+
+    def request_vote(self, peer):
+        log_me(f'[Requesting heartbeat from] {peer}')
+        response = transport.request_vote(peer=peer)
+        return response and response.received_vote
 
 
 election = Election()

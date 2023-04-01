@@ -18,13 +18,11 @@ from .log_manager import log_manager, LogEntry
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
-        """RequestVote for logs leader node election."""
         # TODO: Tabish
         return None
 
     def AppendEntries(self, request, context):
         if request.is_heart_beat:
-            # TODO: Must return from here right?
             return self.heartbeat_handler(request=request)
 
         start_index, prev_term = request.start_index, request.prev_log_term
@@ -69,7 +67,7 @@ class Transport:
 
     def send_heartbeat(self, peer) -> raft_pb2.AEResponse():
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
-        request = raft_pb2.AERequest(term=log_manager.get_current_term(), is_heart_beat=True)
+        request = raft_pb2.AERequest(term=globals.current_term, is_heart_beat=True)
         # send the request
         response = self.peer_stubs[peer].AppendEntries(request)
         print(f"Heartbeat response is {response}")
@@ -111,6 +109,14 @@ class Transport:
         print(f"Append entries resp {resp}")
 
         return 0
+
+    def request_vote(self, peer):
+        request = raft_pb2.VoteRequest(term=globals.current_term, candidate_id=globals.name,
+                                       last_log_index=log_manager.get_last_index(),
+                                       last_log_term=log_manager.get_latest_term())
+        response = self.peer_stubs[peer].RequestVote(request)
+        print(f"VoteRequest response is {response}")
+        return response
 
 
 def from_grpc_log_entry(entry):

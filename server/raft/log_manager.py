@@ -2,14 +2,11 @@ import os
 import pickle
 from threading import Lock
 
-from .config import globals, NodeRole
+from .config import globals
 from .utils import *
 
-# import raft_pb2
-# import raft_pb2_grpc
-
-RAFT_BASE_DIR = './logs-kv'
-RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
+RAFT_BASE_DIR = './logs/logcache'
+RAFT_LOG_PATH = RAFT_BASE_DIR + '/stable_log'
 
 
 class LogEntry:
@@ -122,6 +119,13 @@ class LogManager:
         '''
         # TODO Fix this
         # self.election_time = time.time() + config.random_timeout()
+
+    def get_last_index(self):
+        return len(self.entries)
+
+    def get_latest_term(self):
+        if not self.entries: return 0
+        return self.entries[-1].term
 
 
 log_manager = LogManager()
