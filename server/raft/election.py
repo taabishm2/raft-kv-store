@@ -4,7 +4,7 @@ import time
 
 from queue import Queue
 from threading import Lock, Thread
-from raft import config as config
+from logs import config as config
 
 # from .config import config 
 from .log_manager import *

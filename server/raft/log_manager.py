@@ -1,11 +1,11 @@
 import os
 import enum
 import pickle
-import datetime;
+import datetime
 import time
 
 from threading import Lock
-from raft import config as config
+from logs import config as config
 
 import raft_pb2
 import raft_pb2_grpc
@@ -16,18 +16,19 @@ class NodeRole(enum.Enum):
     Candidate = 2
     Leader = 3
 
-RAFT_BASE_DIR = './raft-kv'
+RAFT_BASE_DIR = './logs-kv'
 RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
 
-class RaftState:
-    def __init__(self):
-        self.current_term = 0
-        self.commit_index = 0  # Index of highest log entry known to be committed
-        self.last_applied = 0  # Index of highest log entry applied to state machine
-        self.voted_for_ip = ""
-        self.state = {}
-        self.entries = list()
-        self.leader_ip = ""
+# Why is this needed?
+# class RaftState:
+#     def __init__(self):
+#         self.current_term = 0
+#         self.commit_index = 0  # Index of highest log entry known to be committed
+#         self.last_applied = 0  # Index of highest log entry applied to state machine
+#         self.voted_for_ip = ""
+#         self.state = {}
+#         self.entries = list()
+#         self.leader_ip = ""
 
 ######################### LogEntry class ##########################
 
@@ -45,14 +46,14 @@ def to_grpc_log_entry(entry):
                 value = entry.cmd_val,
             )
         )
-    
+
     return log_entry
 
 def from_grpc_log_entry(entry):
     write_command = entry.command
     log_entry = LogEntry(entry.log_term,
         write_command.key, write_command.value)
-    
+
     return log_entry
 
 ######################### LogManager class ##########################
@@ -61,6 +62,7 @@ class LogManager:
     def __init__(self, name):
         self.name = name
 
+        # TODO: Current term should only be in one location (with RaftNode object)
         self.current_term = 1
         self.commit_index = 0  # Index of highest log entry known to be committed
         self.last_applied = 0  # Index of highest log entry applied to state machine
@@ -77,12 +79,9 @@ class LogManager:
             return NodeRole.Leader
 
         return NodeRole.Follower
-    
-    def is_node_leader(self):
-        return (self.role == NodeRole.Leader)
 
-    def get_log_entry(self, key, value):
-        return LogEntry(self.current_term, key, value)
+    def is_node_leader(self):
+        return self.role == NodeRole.Leader
 
     def get_current_term(self):
         return self.current_term
@@ -92,7 +91,7 @@ class LogManager:
 
     def load_entries(self):
         if not os.path.exists(RAFT_BASE_DIR):
-            os.makedirs(RAFT_BASE_DIR) # Create empty 
+            os.makedirs(RAFT_BASE_DIR) # Create empty
 
         if not os.path.exists(RAFT_LOG_PATH):
             self.flush_log_to_disk()  # Create empty log file
@@ -111,7 +110,7 @@ class LogManager:
         with self.lock:
             self.entries.append(log_entry)
             self.flush_log_to_disk()
-            
+
             return len(self.entries)
 
     def overwrite(self, start_index, log_entry_list, previous_term):

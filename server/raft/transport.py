@@ -1,6 +1,6 @@
 """
 This file contains the transport class that handles communication
-between raft nodes.
+between logs nodes.
 """
  
 from concurrent import futures
@@ -16,10 +16,12 @@ from .protocol_servicer import *
 
 class Transport:
     def __init__(self, peers, log_manager):
-        # log manager.
+        # TODO: passing log manager along seems off
         self.log_manager = log_manager
 
-        # list of grpc clients.
+        # TODO: Isn't there a better way for this?
+        assert 'PEER_IPS' in os.environ
+        peers = os.environ['PEER_IPS'].split(",")
         self.peer_ips = peers
 
         # create a dictionary to store the peer IDs and their stubs
@@ -30,7 +32,7 @@ class Transport:
             stub = raft_pb2_grpc.RaftProtocolStub(channel)
             peer_stubs[ip] = stub
 
-        # Start raft server.
+        # Start logs server.
         Thread(target=self.raft_server).start()
 
     ############### gRPC server ##########################

@@ -3,8 +3,8 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server1:/raft-kv-store/server/raft/logcache"
-            - "../server/raft-kv:/raft-kv-store/server/raft-kv"
+            - "../server/logs/logcache/server1:/logs-kv-store/server/logs/logcache"
+            - "../server/logs-kv:/logs-kv-store/server/logs-kv"
         ports:
             - "127.0.0.1:5440:5440"
             - "127.0.0.1:4000:4000"
@@ -17,7 +17,7 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server2:/raft-kv-store/server/raft/logcache"
+            - "../server/logs/logcache/server2:/logs-kv-store/server/logs/logcache"
         ports:
             - "127.0.0.1:5441:5440"
             - "127.0.0.1:4001:4000"
@@ -30,7 +30,7 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server3:/raft-kv-store/server/raft/logcache"
+            - "../server/logs/logcache/server3:/logs-kv-store/server/logs/logcache"
         ports:
             - "127.0.0.1:5442:5440"
             - "127.0.0.1:4002:4000"
@@ -43,7 +43,7 @@ services:
         image: kvstore
         volumes:
             - "../client/client.sh:/start.sh"
-            - "../server/raft/logcache:/raft-kv-store/server/raft/logcache"
+            - "../server/logs/logcache:/logs-kv-store/server/logs/logcache"
         # client container can access the localhost of the computer.
         # network_mode: host
         # should wait until all the servers are ready.

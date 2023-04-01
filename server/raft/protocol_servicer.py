@@ -1,5 +1,5 @@
 '''
-This file services raft protocol rpcs.
+This file services logs protocol rpcs.
 '''
 import raft_pb2
 import raft_pb2_grpc
@@ -15,13 +15,13 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
         """
-        RequestVote for raft leader node election.
+        RequestVote for logs leader node election.
         """
         return None
 
     def AppendEntries(self, request, context):
         """
-        AppendEntries for leader raft node to override/append its
+        AppendEntries for leader logs node to override/append its
         log entries into followers.
         """
         if request.is_heart_beat:

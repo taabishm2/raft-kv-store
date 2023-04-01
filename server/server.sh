@@ -1,4 +1,4 @@
 cd /raft-kv-store/server
-python3 -u -m server
-# python3 -u -m server > /raft-kv-store/server/raft/logcache/server.out &
+python3 -u -m main
+# python3 -u -m server > /logs-kv-store/server/logs/logcache/server.out &
 # tail -f /dev/null
