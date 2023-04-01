@@ -3,8 +3,7 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server1:/raft-kv-store/server/raft/logcache"
-            - "../server/raft-kv:/raft-kv-store/server/raft-kv"
+            - "../logs/logcache/server1:/raft-kv-store/logs/logcache"
         ports:
             - "127.0.0.1:5440:5440"
             - "127.0.0.1:4000:4000"
@@ -17,7 +16,7 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server2:/raft-kv-store/server/raft/logcache"
+            - "../logs/logcache/server2:/raft-kv-store/logs/logcache"
         ports:
             - "127.0.0.1:5441:5440"
             - "127.0.0.1:4001:4000"
@@ -30,7 +29,7 @@ services:
         image: kvstore
         volumes:
             - "../server/server.sh:/start.sh"
-            - "../server/raft/logcache/server3:/raft-kv-store/server/raft/logcache"
+            - "../logs/logcache/server3:/raft-kv-store/logs/logcache"
         ports:
             - "127.0.0.1:5442:5440"
             - "127.0.0.1:4002:4000"
@@ -39,15 +38,15 @@ services:
             - IS_LEADER=FALSE
             - PEER_IPS=server-1:4000,server-2:4000
 
-    client:
-        image: kvstore
-        volumes:
-            - "../client/client.sh:/start.sh"
-            - "../server/raft/logcache:/raft-kv-store/server/raft/logcache"
-        # client container can access the localhost of the computer.
-        # network_mode: host
-        # should wait until all the servers are ready.
-        depends_on:
-            - server-1
-            - server-2
-            - server-3
+#    client:
+#        image: kvstore
+#        volumes:
+#            - "../client/client.sh:/start.sh"
+#            - "../server/logs/logcache:/raft-kv-store/logs/logcache"
+#        # client container can access the localhost of the computer.
+#        # network_mode: host
+#        # should wait until all the servers are ready.
+#        depends_on:
+#            - server-1
+#            - server-2
+#            - server-3

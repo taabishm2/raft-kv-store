@@ -21,7 +21,7 @@ def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel('server-1:5440')
+    channel = grpc.insecure_channel('localhost:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
@@ -47,21 +47,43 @@ def random_requests():
                 REQ_TIMES.append(t2 - t1)
 
 
+def send_put(key, val):
+    channel = grpc.insecure_channel('localhost:5440')
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+    resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
+    print(f"PUT {key}:{val} sent! Response error: {resp.error}")
+
+
+def send_get(key):
+    channel = grpc.insecure_channel('localhost:5440')
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+    resp = stub.Get(kvstore_pb2.GetRequest(key=key))
+    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value}")
+
+
 if __name__ == '__main__':
     counter = 0
     running_threads = []
 
-    sleep(2)
+    # Spawn multiple threads and sent random get/put requests
+    # sleep(2)
+    #
+    # # Start all threads
+    # while counter < THREAD_COUNT:
+    #     t = Thread(target=random_requests)
+    #     t.start()
+    #     running_threads.append(t)
+    #     counter += 1
+    #
+    # # Wait for threads to finish running
+    # for t in running_threads:
+    #     t.join()
 
-    # Start all threads
-    while counter < THREAD_COUNT:
-        t = Thread(target=random_requests)
-        t.start()
-        running_threads.append(t)
-        counter += 1
-
-    # Wait for threads to finish running
-    for t in running_threads:
-        t.join()
+    # Send single put and 2 gets (one valid one invalid)
+    send_put("Key1", "Val1")
+    send_get("Key1")
+    send_get("Invalid")
 
     print(f'Completed Client Process!')
