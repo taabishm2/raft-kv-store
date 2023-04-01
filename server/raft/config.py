@@ -20,7 +20,7 @@ class Globals():
 
         # Raft-node state
         self.name = environ['NAME']
-        self.state = NodeRole.Leader if environ['IS_LEADER'] else NodeRole.Follower
+        self.state = NodeRole.Follower
 
         # Other state
         self.leader_ip = None

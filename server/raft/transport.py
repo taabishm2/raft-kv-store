@@ -18,6 +18,7 @@ from .log_manager import log_manager, LogEntry
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
+        log_me(f"Vote Requested by {request.candidate_id}")
         # Vote denied if my term > candidate's or (terms equal but (my log is longer / I have already voted)
         if globals.current_term > request.last_log_term or (
                 globals.current_term == request.last_log_term and (
@@ -28,10 +29,9 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         globals.current_term = request.last_log_term
         # TODO: what else to do at this transition?
         globals.state = NodeRole.Follower
-        # TODO: Check if this sets the voted_for correctly
-        globals.voted_for = request.context.peer().split(':')[0]
+        globals.voted_for = request.candidate_id
 
-        return raft_pb2.VoteResponse(request.last_log_term, vote_granted=True)
+        return raft_pb2.VoteResponse(term=request.last_log_term, vote_granted=True)
 
     def AppendEntries(self, request, context):
         #TODO: if RPC term is valid, update globals.leader_ip and globals.term (in case leadership changed)

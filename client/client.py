@@ -8,6 +8,8 @@ sys.path.append('../')
 from time import time
 import kvstore_pb2
 import kvstore_pb2_grpc
+import raft_pb2
+import raft_pb2_grpc
 from threading import Lock, Thread
 
 # Globals
@@ -63,6 +65,15 @@ def send_get(key):
     print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value}")
 
 
+def send_request_vote(term, candidate_id, logidx, logterm):
+    channel = grpc.insecure_channel('localhost:4000')
+    stub = raft_pb2_grpc.RaftProtocolStub(channel)
+
+    resp = stub.RequestVote(raft_pb2.VoteRequest(term=term, candidate_id=candidate_id, last_log_index=logidx, last_log_term=logterm))
+    print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
+    return resp
+
+
 if __name__ == '__main__':
     counter = 0
     running_threads = []
@@ -82,8 +93,14 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-    send_put("Key1", "Val1")
-    send_get("Key1")
-    send_get("Invalid")
+    # send_put("Key1", "Val1")
+    # send_get("Key1")
+    # send_get("Invalid")
+
+    # Send a vote request
+    resp = send_request_vote(5, "", 5, 5)
+    assert resp.term == 5 and resp.vote_granted == True and resp.error == ""
+    resp = send_request_vote(5, "donald-trump", 5, 5)
+    assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
 
     print(f'Completed Client Process!')
