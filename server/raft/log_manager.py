@@ -118,6 +118,8 @@ class LogManager:
         from the leader
         '''
         # TODO Fix this
+        # TODO: This can also be in config.py
+        # randomtimeout function is moved to utils.py
         # self.election_time = time.time() + config.random_timeout()
 
     def get_last_index(self):

@@ -1,4 +1,5 @@
 from datetime import datetime
+from random import randrange
 
 
 def debug(func):
@@ -9,6 +10,10 @@ def debug(func):
         return result
 
     return wrapper
+
+
+def random_timeout(low, high):
+    return randrange(low, high) / 1000
 
 
 def log_me(log: str):

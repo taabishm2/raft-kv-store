@@ -16,8 +16,9 @@ message VoteRequest {
 }
 
 message VoteResponse {
-  bool received_vote=1;
-  string error=2;
+  int64 term=1;
+  bool vote_granted=2;
+  string error=3;
 }
 
 message WriteCommand {
