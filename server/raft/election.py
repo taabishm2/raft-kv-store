@@ -12,7 +12,7 @@ class Election:
     def __init__(self):
         self.timeout_thread = None
 
-    # TODO:Who triggers this?
+    # TODO:Who triggers this? This should be running in the bg continuously for all servers
     def init_heartbeat(self):
         """Initiate periodic heartbeats to the follower nodes if node is leader"""
         if log_manager.role != NodeRole.Leader: return
@@ -62,7 +62,7 @@ class Election:
         """Checks for missed heartbeats from the leader and start the election"""
 
         try:
-            print('Starting timeout')
+            log_me('Starting timeout')
             log_manager.reset_timeout()
             if self.timeout_thread and self.timeout_thread.is_alive():
                 return
@@ -72,29 +72,34 @@ class Election:
             raise e
 
     def trigger_election(self):
+        log_me(f"{globals.name} triggered an election!")
         globals.current_term += 1
-        election_start = time.time()
+        globals.state = NodeRole.Candidate
         # todo: how to vote for self?
         globals.voted_for = globals.name
 
         # TODO: Make this async
         # TODO: If appendRpc received from someone else with term >= this term: become follower
-        votes_received = 0
+        votes_received, election_start = 0, time.time()
         peer_ips = transport.peer_ips
         for peer in peer_ips:
             response = self.request_vote(peer)
-            if response.vote_granted: votes_received += 1
+            if response.vote_granted:
+                log_me(f"{globals.name} received vote from: {peer}")
+                votes_received += 1
 
             # Split vote
             if time.time() - election_start > globals.election_timeout:
+                log_me(f"{globals.name} observed a split vote")
                 time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
+                # If someone else became leader in the meantime, exit out
+                if globals.state != NodeRole.Candidate: return
                 self.trigger_election()
 
         # Case 1: got majority votes: become leader
         if votes_received >= 1 + len(peer_ips) // 2:
             globals.state = NodeRole.Leader
-
-        # Case 2: got heartbeat inbetween: should be handled in heartbeat code
+            log_me(f"{globals.name} became leader!")
 
     def request_vote(self, peer):
         log_me(f'[Requesting vote from] {peer}')
