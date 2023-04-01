@@ -6,6 +6,7 @@ import enum
 class Globals():
     def __init__(self):
         # Persistent state on all servers. Updated on stable storage before responding to RPCs
+        # TODO: Make these persistent
         self.current_term = 0  # latest term server has seen
         self.voted_for = None  # candidateId that received vote in current term
 
@@ -34,10 +35,6 @@ class Globals():
         self.HB_TIME = int(getenv('HB_TIME', 100))
 
         # MAX_LOG_WAIT = int(getenv('MAX_LOG_WAIT', 150))
-
-        # TODO Move out of here
-        def random_timeout():
-            return randrange(self.LOW_TIMEOUT, self.HIGH_TIMEOUT) / 1000
 
         # TODO Move out of here
         def chunks(l, n):

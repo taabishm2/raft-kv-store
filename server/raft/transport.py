@@ -18,10 +18,23 @@ from .log_manager import log_manager, LogEntry
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
-        # TODO: Tabish
-        return None
+        # Vote denied if my term > candidate's or (terms equal but (my log is longer / I have already voted)
+        if globals.current_term > request.last_log_term or (
+                globals.current_term == request.last_log_term and (
+                globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
+            return raft_pb2.VoteResponse(globals.current_term, vote_granted=False)
+
+        # If a candidate/leader discovers its term is out of date, immediately revert to follower
+        globals.current_term = request.last_log_term
+        # TODO: what else to do at this transition?
+        globals.state = NodeRole.Follower
+        # TODO: Check if this sets the voted_for correctly
+        globals.voted_for = request.context.peer().split(':')[0]
+
+        return raft_pb2.VoteResponse(request.last_log_term, vote_granted=True)
 
     def AppendEntries(self, request, context):
+        #TODO: if RPC term is valid, update globals.leader_ip and globals.term (in case leadership changed)
         if request.is_heart_beat:
             return self.heartbeat_handler(request=request)
 
@@ -42,18 +55,19 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         :returns: term and latest commit_id of this (follower) node
         :rtype: tuple
         """
+        # TODO: What if this node is a candidate or leader?
         try:
             term = request.term
             if globals.current_term <= term:
                 # Got heartbeat from a leader with valid term
                 log_manager.reset_timeout()
                 print(f'got heartbeat from leader {log_manager.leader_ip}')
-                log_manager.role = NodeRole.Follower
+                globals.role = NodeRole.Follower
 
                 # Update my term to leader's term
-                log_manager.current_term = max(term, log_manager.current_term)
+                globals.current_term = max(term, globals.current_term)
 
-            return raft_pb2.AEResponse(log_manager.current_term, is_success=True)
+            return raft_pb2.AEResponse(globals.current_term, is_success=True)
             # TODO: NNED TO SEND LATEST COMMIT ID ALSOOO???
         except Exception as e:
             raise e

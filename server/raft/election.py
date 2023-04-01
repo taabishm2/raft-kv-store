@@ -1,9 +1,10 @@
 import time
 from threading import Thread
 
-from .config import NodeRole
+from .config import NodeRole, globals
 from .utils import *
-from .transport import *
+from .transport import transport
+from .log_manager import log_manager
 
 
 class Election:
@@ -11,6 +12,7 @@ class Election:
     def __init__(self):
         self.timeout_thread = None
 
+    # TODO:Who triggers this?
     def init_heartbeat(self):
         """Initiate periodic heartbeats to the follower nodes if node is leader"""
         if log_manager.role != NodeRole.Leader: return
@@ -71,20 +73,33 @@ class Election:
 
     def trigger_election(self):
         globals.current_term += 1
+        election_start = time.time()
         # todo: how to vote for self?
-        # send request vote rpc to all peers
+        globals.voted_for = globals.name
 
-        running_threads = [Thread(target=self.request_vote, args=(peer,)).start() for peer in transport.peer_ips]
+        # TODO: Make this async
+        # TODO: If appendRpc received from someone else with term >= this term: become follower
+        votes_received = 0
+        peer_ips = transport.peer_ips
+        for peer in peer_ips:
+            response = self.request_vote(peer)
+            if response.vote_granted: votes_received += 1
 
+            # Split vote
+            if time.time() - election_start > globals.election_timeout:
+                time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
+                self.trigger_election()
 
-        # Case 1: got majority
-        # Case 2: got heartbeat inbetween
-        # Case 3: election timeout (split vote)
+        # Case 1: got majority votes: become leader
+        if votes_received >= 1 + len(peer_ips) // 2:
+            globals.state = NodeRole.Leader
+
+        # Case 2: got heartbeat inbetween: should be handled in heartbeat code
 
     def request_vote(self, peer):
-        log_me(f'[Requesting heartbeat from] {peer}')
+        log_me(f'[Requesting vote from] {peer}')
         response = transport.request_vote(peer=peer)
-        return response and response.received_vote
+        return response is not None and response.received_vote
 
 
 election = Election()
