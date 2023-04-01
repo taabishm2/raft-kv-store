@@ -22,14 +22,13 @@ class Transport:
         # list of grpc clients.
         self.peer_ips = peers
 
-        # Initialize grpc client stubs to communicate with each client.
-        self.peer_stubs = list()
+        # create a dictionary to store the peer IDs and their stubs
+        peer_stubs = {}
 
         for ip in self.peer_ips:
             channel = grpc.insecure_channel(ip)
             stub = raft_pb2_grpc.RaftProtocolStub(channel)
-
-            self.peer_stubs.append(stub)
+            peer_stubs[ip] = stub
 
         # Start raft server.
         Thread(target=self.raft_server).start()
@@ -50,24 +49,18 @@ class Transport:
 
     ############### Election ##########################
 
-    def heartbeat(self, peer: str, message: dict = None) -> dict:
+    def send_heartbeat(self, peer)->raft_pb2.AEResponse():
         '''
         If this node is the leader, it will send a heartbeat message
-        to the follower at address `peer`
-        :param peer: address of the follower in `ip:port` format
-        :type peer: str
-        :param message: heartbeat message; it consists current term and
-                        address of this node (leader node)
-        :type message: dict
-        :returns: heartbeat message response as received from the follower
-        :rtype: dict
+        to the follower at address peer
         '''
-        # TODO: Complete function
-        channel = grpc.insecure_channel(peer)
-        stub = raft_pb2_grpc.RaftProtocol(channel)
-        request = raft_pb2.AERequest(is_heart_beat=True)
-        # send the request
+        stub = self.peer_stubs[peer]
+        request = raft_pb2.AERequest(
+            term = self.log_manager.get_current_term(), is_heart_beat = True)
+            # send the request
         response = stub.AppendEntries(request)
+        print(f"Heartbeat response is {response}")
+        return response
 
     ############### AppendEntries RPC ##########################
 
@@ -103,7 +96,7 @@ class Transport:
         This routine pushes the append entry to all peers.
         '''
         num_succ = 0
-        for stub in self.peer_stubs:
+        for stub in self.peer_stubs.values():
             num_succ += self.push_append_entry(stub, index, entry)
 
         return num_succ

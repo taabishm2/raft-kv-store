@@ -10,99 +10,44 @@ from raft import config as config
 from .log_manager import *
 from .transport import *
 
-
-# Using enum class create enumerations
-class NodeRole(enum.Enum):
-    Follower = 1
-    Candidate = 2
-    Leader = 3
-
 class Election:
-    def __init__(self, term, transport: Transport):
+    def __init__(self, term, log_manager, transport: Transport):
         self.timeout_thread = None
-        self.role = self.get_init_role()
-        self.term = term
+        self.log_manager = log_manager
         self.__transport = transport
         self.__lock = Lock()
-
-    def get_init_role(self):
-        is_leader = os.environ['IS_LEADER']
-        if is_leader == "TRUE":
-            return NodeRole.Leader
-
-        return NodeRole.Follower
-
-    def is_node_leader(self):
-        return (self.role == NodeRole.Leader)
+        self.init_timeout()
 
     def init_heartbeat(self):
         '''
         Initiate periodic heartbeats to the follower nodes if node is leader
         '''
-        if self.role != NodeRole.Leader:
+        if self.log_manager.role != NodeRole.Leader:
             return
-        print(f"Node is leader for the term {self.term}")
-        print('sending heartbeat to peers')
+        print(f"Node is leader for the term {self.log_manager.current_term}")
+        print('Starting periodic heartbeats to peers')
         # send heartbeat to peers once peers are added to transport
-        # for peer in self.peers:
-        #     Thread(target=self.send_heartbeat, args=(peer,)).start()
+        for peer in self.log_manager.peers:
+            Thread(target=self.send_heartbeat, args=(peer,)).start()
 
     def send_heartbeat(self, peer: str):
         '''
-        SEND heartbeat to the 'peer' and get it's response if LEADER
-
-        :param peer: address of the follower node
-        :type peer: str
+        SEND heartbeat to the peers and get it's response if LEADER
         '''
         try:
-            message = {'term': self.term, 'addr': self.__transport.addr}
-            while self.role == NodeRole.Leader:
+            while self.log_manager.role == NodeRole.Leader:
                 print(f'[PEER HEARTBEAT] {peer}')
                 start = time.time()
-                # reply = self.__transport.heartbeat(peer=peer, message=message)
-                # if reply:
-                #     # Peer has higher term. Relinquish leadership
-                #     if reply['term'] > self.term:
-                #         self.term = reply['term']
-                #         self.role = NodeRole.Follower
-                #         self.init_timeout()
-                # delta = time.time() - start
-                # time.sleep((config.HB_TIME - delta) / 1000)
-                # print(f'[PEER HEARTBEAT RESPONSE] {peer} {reply}')
-        except Exception as e:
-            raise e
-
-    def heartbeat_handler(self, message: dict) -> tuple:
-        '''
-        Handler function for the FOLLOWER node to validate the heartbeat RECIEVED
-        from the leader
-
-        :param message: heartbeat data as sent by the leader node
-        :type message: dict
-
-        :returns: term and latest commit_id of this (follower) node
-        :rtype: tuple
-        '''
-        try:
-            term = message['term']
-            if self.term <= term:
-                self.leader = message['addr']
-                self.reset_timeout()
-                print(f'got heartbeat from leader {self.leader}')
-                if self.role == NodeRole.Candidate:
-                    self.role = NodeRole.Follower
-                elif self.role == NodeRole.Leader:
-                    self.role = NodeRole.Follower
-                    self.init_timeout()
-
-                if self.term < term:
-                    self.term = term
-
-                if 'action' in message:
-                    print(f'received command from leader {message}')
-                    #  TODO: Do action in message
-                    # self.store.action_handler(message)
-            return self.term, 0 # self.store.commit_id TODO: SEND LATEST COMMIT ID
+                response = self.__transport.send_heartbeat(peer=peer)
+                if response:
+                    # Peer has higher term. Relinquish leadership
+                    if response.term > self.log_manager.current_term:
+                        self.log_manager.current_term = response.term
+                        self.log_manager.role = NodeRole.Follower
+                        self.init_timeout()
+                delta = time.time() - start
+                time.sleep((config.HB_TIME - delta) / 1000)
+                print(f'[PEER HEARTBEAT RESPONSE] {peer} {response}')
         except Exception as e:
             raise e
 
@@ -113,8 +58,8 @@ class Election:
         within some unit time then start the election. This loop will
         run endlessly
         '''
-        while self.role != NodeRole.Leader:
-            delta = self.election_time - time.time()
+        while self.log_manager.role != NodeRole.Leader:
+            delta = self.log_manager.election_time() - time.time()
             if delta < 0:
                 # TODO: START ELECTION!
                 print("TODO")
@@ -127,7 +72,7 @@ class Election:
         '''
         try:
             print('Starting timeout')
-            self.reset_timeout()
+            self.log_manager.reset_timeout()
             if self.timeout_thread and self.timeout_thread.is_alive():
                 return
             self.timeout_thread = Thread(target=self.timeout_loop)
@@ -135,9 +80,3 @@ class Election:
         except Exception as e:
             raise e
 
-    def reset_timeout(self):
-        '''
-        reset the election timeout after receiving heartbeat
-        from the leader
-        '''
-        self.election_time = time.time() + config.random_timeout()

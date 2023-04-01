@@ -1,11 +1,20 @@
 import os
+import enum
 import pickle
 import datetime;
+import time
 
 from threading import Lock
+from raft import config as config
 
 import raft_pb2
 import raft_pb2_grpc
+
+# Using enum class create enumerations
+class NodeRole(enum.Enum):
+    Follower = 1
+    Candidate = 2
+    Leader = 3
 
 RAFT_BASE_DIR = './raft-kv'
 RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
@@ -18,6 +27,7 @@ class RaftState:
         self.voted_for_ip = ""
         self.state = {}
         self.entries = list()
+        self.leader_ip = ""
 
 ######################### LogEntry class ##########################
 
@@ -58,6 +68,18 @@ class LogManager:
         self.entries = list()
         self.lock = Lock()
         self.load_entries() # Load entries from stable store to memory.
+        self.leader_ip = ""
+        self.role = self.get_init_role()
+
+    def get_init_role(self):
+        is_leader = os.environ['IS_LEADER']
+        if is_leader == "TRUE":
+            return NodeRole.Leader
+
+        return NodeRole.Follower
+    
+    def is_node_leader(self):
+        return (self.role == NodeRole.Leader)
 
     def get_log_entry(self, key, value):
         return LogEntry(self.current_term, key, value)
@@ -160,3 +182,10 @@ class LogManager:
 
     def output_log(self, log):
         print(f"[LOG]: {datetime.datetime.now()} {log}")
+
+    def reset_timeout(self):
+        '''
+        reset the election timeout after receiving heartbeat
+        from the leader
+        '''
+        self.election_time = time.time() + config.random_timeout()

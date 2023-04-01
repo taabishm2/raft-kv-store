@@ -22,7 +22,7 @@ class RaftNode:
         self.current_term = 0
         self.__log_manager = LogManager(self.name)
         self.__transport = Transport(peers, self.__log_manager)
-        self.election = Election(self.current_term, transport=self.__transport)
+        self.election = Election(self.current_term, self.__log_manager, transport=self.__transport)
 
         print(f"Raft Node up.\n Name: {self.name}\n current term: {self.current_term}\n"+
             f"Peers: {peers}")
