@@ -1,15 +1,17 @@
 import threading
-from raft import kv_server, transport
+from .raft import kv_server, transport
+
 
 def main():
-    program1_thread = threading.Thread(target=kv_server.main)
-    program2_thread = threading.Thread(target=transport.main)
+    kv_server_thread = threading.Thread(target=kv_server.main)
+    raft_server_thread = threading.Thread(target=transport.main)
 
-    program1_thread.start()
-    program2_thread.start()
+    kv_server_thread.start()
+    raft_server_thread.start()
 
-    program1_thread.join()
-    program2_thread.join()
+    kv_server_thread.join()
+    raft_server_thread.join()
+
 
 if __name__ == '__main__':
     main()

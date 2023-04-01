@@ -1,36 +1,16 @@
 import os
-import enum
 import pickle
-import datetime
-import time
-
 from threading import Lock
-from logs import config as config
 
-import raft_pb2
-import raft_pb2_grpc
+from .config import globals, NodeRole
+from .utils import *
 
-# Using enum class create enumerations
-class NodeRole(enum.Enum):
-    Follower = 1
-    Candidate = 2
-    Leader = 3
+# import raft_pb2
+# import raft_pb2_grpc
 
 RAFT_BASE_DIR = './logs-kv'
 RAFT_LOG_PATH = RAFT_BASE_DIR + '/log'
 
-# Why is this needed?
-# class RaftState:
-#     def __init__(self):
-#         self.current_term = 0
-#         self.commit_index = 0  # Index of highest log entry known to be committed
-#         self.last_applied = 0  # Index of highest log entry applied to state machine
-#         self.voted_for_ip = ""
-#         self.state = {}
-#         self.entries = list()
-#         self.leader_ip = ""
-
-######################### LogEntry class ##########################
 
 class LogEntry:
     def __init__(self, term, cmd_key, cmd_val):
@@ -38,60 +18,16 @@ class LogEntry:
         self.cmd_key = cmd_key
         self.cmd_val = cmd_val
 
-def to_grpc_log_entry(entry):
-    log_entry = raft_pb2.LogEntry(
-            log_term = int(entry.term),
-            command = raft_pb2.WriteCommand(
-                key = entry.cmd_key,
-                value = entry.cmd_val,
-            )
-        )
-
-    return log_entry
-
-def from_grpc_log_entry(entry):
-    write_command = entry.command
-    log_entry = LogEntry(entry.log_term,
-        write_command.key, write_command.value)
-
-    return log_entry
-
-######################### LogManager class ##########################
 
 class LogManager:
-    def __init__(self, name):
-        self.name = name
-
-        # TODO: Current term should only be in one location (with RaftNode object)
-        self.current_term = 1
-        self.commit_index = 0  # Index of highest log entry known to be committed
-        self.last_applied = 0  # Index of highest log entry applied to state machine
-        self.voted_for_ip = ""
-        self.entries = list()
+    def __init__(self):
         self.lock = Lock()
-        self.load_entries() # Load entries from stable store to memory.
-        self.leader_ip = ""
-        self.role = self.get_init_role()
-
-    def get_init_role(self):
-        is_leader = os.environ['IS_LEADER']
-        if is_leader == "TRUE":
-            return NodeRole.Leader
-
-        return NodeRole.Follower
-
-    def is_node_leader(self):
-        return self.role == NodeRole.Leader
-
-    def get_current_term(self):
-        return self.current_term
-
-    def get_name(self):
-        return self.name
+        self.entries = []
+        self.load_entries()  # Load entries from stable store to memory.
 
     def load_entries(self):
         if not os.path.exists(RAFT_BASE_DIR):
-            os.makedirs(RAFT_BASE_DIR) # Create empty
+            os.makedirs(RAFT_BASE_DIR)  # Create empty
 
         if not os.path.exists(RAFT_LOG_PATH):
             self.flush_log_to_disk()  # Create empty log file
@@ -99,7 +35,7 @@ class LogManager:
         file = open(RAFT_LOG_PATH, 'rb')
         self.entries = pickle.load(file)
         num_entries = len(self.entries)
-        self.output_log(f'Loaded {num_entries} entries')
+        log_me(f'Loaded {num_entries} log entries from disk')
         file.close()
 
     def append(self, log_entry):
@@ -146,9 +82,9 @@ class LogManager:
         """
         Get the earliest uncommitted log entry or None if it doesn't exist
         """
-        if len(self.entries) == 0 or self.commit_index + 1 >= len(self.entries):
+        if len(self.entries) == 0 or globals.commit_index + 1 >= len(self.entries):
             return None
-        return self.entries[self.commit_index + 1]
+        return self.entries[globals.commit_index + 1]
 
     def commit_log_entry(self):
         """
@@ -156,15 +92,15 @@ class LogManager:
         """
         if self.get_earliest_uncommitted() is None:
             raise ValueError("No valid log entry present to commit")
-        self.commit_index += 1
+        globals.commit_index += 1
 
     def get_earliest_unapplied(self):
         """
         Get the earliest unapplied log entry or None if it doesn't exist
         """
-        if len(self.entries) == 0 or self.last_applied + 1 >= len(self.entries):
+        if len(self.entries) == 0 or globals.last_applied + 1 >= len(self.entries):
             return None
-        return self.entries[self.last_applied + 1]
+        return self.entries[globals.last_applied + 1]
 
     def mark_log_applied(self):
         """
@@ -172,19 +108,20 @@ class LogManager:
         """
         if self.get_earliest_unapplied() is None:
             raise ValueError("No valid log entry present to apply")
-        self.last_applied += 1
+        globals.last_applied += 1
 
     def flush_log_to_disk(self):
         log_file = open(RAFT_LOG_PATH, 'wb')
         pickle.dump(self.entries, log_file)
         log_file.close()
 
-    def output_log(self, log):
-        print(f"[LOG]: {datetime.datetime.now()} {log}")
-
     def reset_timeout(self):
         '''
         reset the election timeout after receiving heartbeat
         from the leader
         '''
-        self.election_time = time.time() + config.random_timeout()
+        # TODO Fix this
+        # self.election_time = time.time() + config.random_timeout()
+
+
+log_manager = LogManager()

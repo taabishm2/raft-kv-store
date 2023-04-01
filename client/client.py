@@ -21,7 +21,7 @@ def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel('server-1:5440')
+    channel = grpc.insecure_channel('localhost:5440')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
