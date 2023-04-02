@@ -51,7 +51,7 @@ class Election:
         '''
         while log_manager.role != NodeRole.Leader:
             # TODO: condition looks wrong. method isn't implemented in log_manager
-            delta = log_manager.election_time() - time.time()
+            delta = log_manager.election_time - time.time()
             if delta < 0:
                 self.trigger_election()
                 print("TODO")
