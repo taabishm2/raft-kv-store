@@ -26,7 +26,10 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         with self.kv_store_lock:
             if is_consensus:
                 self.kv_store[request.key] = request.value
+            else:
+                error = "No consensus was reached. Try again."
 
+        log_me(f"consensus {is_consensus} error {error}")
         return kvstore_pb2.PutResponse(error=error)
 
     def Get(self, request, context):
