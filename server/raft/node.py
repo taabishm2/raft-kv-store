@@ -1,5 +1,6 @@
 from .election import *
 from .transport import transport
+from .log_manager import *
 
 
 class RaftNode:

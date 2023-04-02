@@ -15,6 +15,28 @@ from .config import globals, NodeRole
 from .log_manager import log_manager, LogEntry
 
 
+##################### Helper Utils ##################################
+
+def to_grpc_log_entry(entry : LogEntry):
+    log_entry = raft_pb2.LogEntry(
+            log_term = int(entry.term),
+            command = raft_pb2.WriteCommand(
+                key = entry.cmd_key,
+                value = entry.cmd_val,
+            )
+        )
+    
+    return log_entry
+
+def from_grpc_log_entry(entry):
+    write_command = entry.command
+    log_entry = LogEntry(entry.log_term,
+        write_command.key, write_command.value)
+    
+    return log_entry
+
+#####################################################################
+
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
@@ -43,8 +65,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
         # Try to append entry at given index.
         if not log_manager.overwrite(start_index, log_entries, prev_term):
+            log_me(f"AppendEntries request from {request.leader_id} failed")
             return raft_pb2.AEResponse(is_success=False, error="Append Entries overwrite failed")
-
+        
+        # AppendEntries RPC success.
+        log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
         return raft_pb2.AEResponse(is_success=True)
 
     def heartbeat_handler(self, request) -> tuple:
@@ -88,15 +113,19 @@ class Transport:
         return response
 
     # AppendEntries RPC
-
     def append_entry_to_peers(self, entry, index):
         success_count = 0
         for stub in self.peer_stubs.values():
-            success_count += self.push_append_entry(stub, index, entry)
+            success_count += self.push_append_entry(stub, index, [entry])
+        log_me(f"AppendEntries RPC success from {success_count} replicas")
 
         return success_count
 
-    def push_append_entry(self, peer_stub, index, entry: LogEntry):
+    def push_append_entry(self, peer_stub, index, entries: list[LogEntry]):
+        # Trivial failure case.
+        if index < 0:
+            return 0
+
         prev_index = index - 1
         prev_log_entry = log_manager.get_log_at_index(prev_index)
 
@@ -110,19 +139,18 @@ class Transport:
             is_heart_beat=False,
         )
 
-        log_entry = raft_pb2.LogEntry(
-            log_term=int(entry.term),
-            command=raft_pb2.WriteCommand(
-                key=entry.cmd_key,
-                value=entry.cmd_val,
-            )
-        )
-        request.entries.append(log_entry)
+        for entry in entries:
+            log_entry_grpc = to_grpc_log_entry(entry)
+            request.entries.append(log_entry_grpc)
 
         resp = peer_stub.AppendEntries(request)
-        print(f"Append entries resp {resp}")
+        if not resp.is_success:
+            entries[1:] = entries
+            entries[0] = prev_log_entry
+            # Retry with updated entries list.
+            return self.push_append_entry(peer_stub, index - 1, entries)
 
-        return 0
+        return 1
 
     def request_vote(self, peer):
         request = raft_pb2.VoteRequest(term=globals.current_term, candidate_id=globals.name,

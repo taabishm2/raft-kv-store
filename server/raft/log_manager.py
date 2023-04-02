@@ -38,13 +38,13 @@ class LogManager:
     def append(self, log_entry):
         """
         append entry to the node's replicated log. This method is to be used by the leader
-        to populate its own log. Returns last log index if successful.
+        to populate its own log. Returns last log index (length - 1) if successful.
         """
         with self.lock:
             self.entries.append(log_entry)
             self.flush_log_to_disk()
 
-            return len(self.entries)
+            return len(self.entries) - 1
 
     def overwrite(self, start_index, log_entry_list, previous_term):
         """

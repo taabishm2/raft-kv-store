@@ -1,6 +1,8 @@
-from os import getenv, environ
-from random import randrange
 import enum
+from os import environ, getenv
+from random import randrange
+
+from .utils import *
 
 
 class Globals():
@@ -20,7 +22,10 @@ class Globals():
 
         # Raft-node state
         self.name = environ['NAME']
-        self.state = NodeRole.Follower
+        # TODO: Remove this after election is setup.
+        self.state = NodeRole.Follower 
+        if environ['IS_LEADER'] == "TRUE":
+           self.state = NodeRole.Leader  
 
         # Other state
         self.leader_ip = None
@@ -35,6 +40,8 @@ class Globals():
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 100ms
         self.HB_TIME = int(getenv('HB_TIME', 100))
+
+        log_me("Global config initialized")
 
         # MAX_LOG_WAIT = int(getenv('MAX_LOG_WAIT', 150))
 

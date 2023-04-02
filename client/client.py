@@ -93,14 +93,14 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-    # send_put("Key1", "Val1")
-    # send_get("Key1")
-    # send_get("Invalid")
+    send_put("Key1", "Val1")
+    send_get("Key1")
+    send_get("Invalid")
 
     # Send a vote request
-    resp = send_request_vote(5, "sender-a", 5, 5)
-    assert resp.term == 5 and resp.vote_granted == True and resp.error == ""
-    resp = send_request_vote(5, "sender-b", 5, 5)
-    assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
+    # resp = send_request_vote(5, "sender-a", 5, 5)
+    # assert resp.term == 5 and resp.vote_granted == True and resp.error == ""
+    # resp = send_request_vote(5, "sender-b", 5, 5)
+    # assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
 
     print(f'Completed Client Process!')
