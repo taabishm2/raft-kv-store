@@ -83,8 +83,7 @@ class Election:
         votes_received, election_start = 0, time.time()
         peer_ips = transport.peer_ips
         for peer in peer_ips:
-            response = self.request_vote(peer)
-            if response.vote_granted:
+            if self.request_vote(peer):
                 log_me(f"{globals.name} received vote from: {peer}")
                 votes_received += 1
 
@@ -104,7 +103,7 @@ class Election:
     def request_vote(self, peer):
         log_me(f'[Requesting vote from] {peer}')
         response = transport.request_vote(peer=peer)
-        return response is not None and response.received_vote
+        return response is not None and response.vote_granted
 
 
 election = Election()
