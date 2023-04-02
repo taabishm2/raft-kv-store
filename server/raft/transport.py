@@ -5,16 +5,16 @@ between logs nodes.
 
 import os
 from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from time import sleep
 
 import grpc
-
 import raft_pb2
 import raft_pb2_grpc
-from .utils import *
-from .config import globals, NodeRole
-from .log_manager import log_manager, LogEntry
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from .config import NodeRole, globals
+from .log_manager import LogEntry, log_manager
+from .utils import *
 
 ##################### Helper Utils ##################################
 
@@ -57,6 +57,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         return raft_pb2.VoteResponse(term=request.last_log_term, vote_granted=True)
 
     def AppendEntries(self, request, context):
+        if globals.is_unresponsive:
+            log_me("Am going to sleepzzzz")
+            while True:
+                sleep(1)
+
         #TODO: if RPC term is valid, update globals.leader_ip and globals.term (in case leadership changed)
         if request.is_heart_beat:
             return self.heartbeat_handler(request=request)
@@ -125,6 +130,7 @@ class Transport:
                 try:
                     success_count += completed_task.result()
                 except Exception as exc:
+                    # Unresponsive clients, Internal errors...
                     log_me(f'generated an exception: {exc}')
 
         log_me(f"AppendEntries RPC success from {success_count} replicas")
@@ -153,7 +159,8 @@ class Transport:
             log_entry_grpc = to_grpc_log_entry(entry)
             request.entries.append(log_entry_grpc)
 
-        resp = peer_stub.AppendEntries(request)
+        # Call appendEntries RPC with 5 second timeout.
+        resp = peer_stub.AppendEntries(request, timeout=5)
         if not resp.is_success:
             entries[1:] = entries
             entries[0] = prev_log_entry
