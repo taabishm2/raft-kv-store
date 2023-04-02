@@ -25,7 +25,12 @@ class Globals():
         # TODO: Remove this after election is setup.
         self.state = NodeRole.Follower 
         if environ['IS_LEADER'] == "TRUE":
-           self.state = NodeRole.Leader  
+           self.state = NodeRole.Leader
+
+        self.is_unresponsive = False
+        if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
+            self.is_unresponsive = True
+        log_me(f"is_unresponsive? {self.is_unresponsive}")
 
         # Other state
         self.leader_ip = None
