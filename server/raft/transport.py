@@ -13,6 +13,7 @@ import raft_pb2_grpc
 from .utils import *
 from .config import globals, NodeRole
 from .log_manager import log_manager, LogEntry
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 ##################### Helper Utils ##################################
@@ -115,8 +116,17 @@ class Transport:
     # AppendEntries RPC
     def append_entry_to_peers(self, entry, index):
         success_count = 0
-        for stub in self.peer_stubs.values():
-            success_count += self.push_append_entry(stub, index, [entry])
+        # Use thread pool to submit rpcs to peers.
+        num_peers = len(self.peer_stubs)
+        with ThreadPoolExecutor(max_workers=num_peers) as executor:
+            future_rpcs = {executor.submit(self.push_append_entry, stub, index, [entry])
+                for stub in self.peer_stubs.values()}
+            for completed_task in as_completed(future_rpcs):
+                try:
+                    success_count += completed_task.result()
+                except Exception as exc:
+                    log_me(f'generated an exception: {exc}')
+
         log_me(f"AppendEntries RPC success from {success_count} replicas")
 
         return success_count
