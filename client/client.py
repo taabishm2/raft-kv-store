@@ -98,9 +98,9 @@ if __name__ == '__main__':
     # send_get("Invalid")
 
     # Send a vote request
-    resp = send_request_vote(5, "", 5, 5)
+    resp = send_request_vote(5, "sender-a", 5, 5)
     assert resp.term == 5 and resp.vote_granted == True and resp.error == ""
-    resp = send_request_vote(5, "donald-trump", 5, 5)
+    resp = send_request_vote(5, "sender-b", 5, 5)
     assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
 
     print(f'Completed Client Process!')

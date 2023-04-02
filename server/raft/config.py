@@ -25,6 +25,8 @@ class Globals():
         # Other state
         self.leader_ip = None
 
+        self.election_timeout = 100
+
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
         self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 250))
