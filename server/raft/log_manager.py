@@ -112,16 +112,6 @@ class LogManager:
         pickle.dump(self.entries, log_file)
         log_file.close()
 
-    def reset_timeout(self):
-        '''
-        reset the election timeout after receiving heartbeat
-        from the leader
-        '''
-        # TODO Fix this
-        # TODO: This can also be in config.py
-        # randomtimeout function is moved to utils.py
-        # self.election_time = time.time() + config.random_timeout()
-
     def get_last_index(self):
         return len(self.entries)
 

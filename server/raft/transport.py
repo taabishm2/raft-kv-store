@@ -73,27 +73,27 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
         return raft_pb2.AEResponse(is_success=True)
 
-    def heartbeat_handler(self, request) -> tuple:
+    def heartbeat_handler(self, request):
         """
         Handler function for FOLLOWER node to validate heartbeat RECEIVED from leader
 
         :param request: AERequest req for heartbeat data sent by the leader node
         :returns: term and latest commit_id of this (follower) node
-        :rtype: tuple
         """
         # TODO: What if this node is a candidate or leader?
         try:
             term = request.term
             if globals.current_term <= term:
                 # Got heartbeat from a leader with valid term
-                log_manager.reset_timeout()
-                print(f'got heartbeat from leader {log_manager.leader_ip}')
+                rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
+                globals.curr_rand_election_timeout = time.time() + rand_timeout
+                print(f'got heartbeat from leader {globals.leader_ip}')
                 globals.role = NodeRole.Follower
 
                 # Update my term to leader's term
                 globals.current_term = max(term, globals.current_term)
 
-            return raft_pb2.AEResponse(globals.current_term, is_success=True)
+            return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
             # TODO: NNED TO SEND LATEST COMMIT ID ALSOOO???
         except Exception as e:
             raise e
@@ -105,7 +105,7 @@ class Transport:
         # create a dictionary to store the peer IPs and their stubs
         self.peer_stubs = {ip: raft_pb2_grpc.RaftProtocolStub(grpc.insecure_channel(ip)) for ip in self.peer_ips}
 
-    def send_heartbeat(self, peer) -> raft_pb2.AEResponse():
+    def send_heartbeat(self, peer):
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
         request = raft_pb2.AERequest(term=globals.current_term, is_heart_beat=True)
         # send the request
