@@ -23,7 +23,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         if globals.current_term > request.last_log_term or (
                 globals.current_term == request.last_log_term and (
                 globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
-            return raft_pb2.VoteResponse(globals.current_term, vote_granted=False)
+            return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
 
         # If a candidate/leader discovers its term is out of date, immediately revert to follower
         globals.current_term = request.last_log_term

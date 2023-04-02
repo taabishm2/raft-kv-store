@@ -15,8 +15,8 @@ def main():
 
     # TODO: remove this (test code)
     print(f"*** WAITING 10 secs for servers, leader={environ['IS_LEADER']} ***")
-    time.sleep(5)
-    if environ['IS_LEADER'] == "TRUE": election.trigger_election()
+    #time.sleep(5)
+    #if environ['IS_LEADER'] == "TRUE": election.trigger_election()
 
     kv_server_thread.join()
     raft_server_thread.join()
