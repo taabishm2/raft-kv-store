@@ -93,7 +93,7 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-    send_put("Key1", "Val1")
+    # send_put("Key1", "Val1")
     send_get("Key1")
     send_get("Invalid")
 

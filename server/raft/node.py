@@ -20,6 +20,9 @@ class RaftNode:
         index = log_manager.append(log_item)
         is_success_on_majority = transport.append_entry_to_peers(log_item, index)
 
+        if is_success_on_majority:
+            globals.set_commit_index(index)
+
         return is_success_on_majority, ""
 
 
