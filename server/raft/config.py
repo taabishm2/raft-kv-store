@@ -33,7 +33,7 @@ class Globals():
         log_me(f"is_unresponsive? {self.is_unresponsive}")
 
         # Other state
-        self.leader_ip = None
+        self.leader_name = None
 
         self.election_timeout = 150
         self.curr_rand_election_timeout = 0

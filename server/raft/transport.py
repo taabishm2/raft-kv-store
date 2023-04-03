@@ -62,7 +62,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
             while True:
                 sleep(1)
 
-        #TODO: if RPC term is valid, update globals.leader_ip and globals.term (in case leadership changed)
+        #TODO: if RPC term is valid, update globals.leader_name and globals.term (in case leadership changed)
         if request.is_heart_beat:
             return self.heartbeat_handler(request=request)
 
@@ -92,7 +92,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
                 globals.curr_rand_election_timeout = time.time() + rand_timeout
-                print(f'got heartbeat from leader {globals.leader_ip}')
+                print(f'got heartbeat from leader {globals.leader_name}')
                 globals.role = NodeRole.Follower
 
                 # Update my term to leader's term

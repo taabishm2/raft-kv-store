@@ -59,7 +59,7 @@ class Election:
             delta = globals.curr_rand_election_timeout - time.time()
             if delta < 0:
                 self.trigger_election()
-                print("TODO")
+                log_me("Starting an election as heartbeat from leader timed out")
             else:
                 time.sleep(delta)
 
@@ -105,6 +105,7 @@ class Election:
         if votes_received >= 1 + len(peer_ips) // 2:
             globals.state = NodeRole.Leader
             log_me(f"{globals.name} became leader!")
+            globals.leader_name = globals.name
             self.init_heartbeat()
 
     def request_vote(self, peer):
