@@ -12,7 +12,7 @@ class Election:
     def __init__(self):
         # Start a daemon thread to watch for callbacks from leader.
         self.timeout_thread = None
-        self.init_heartbeat()
+        # self.init_heartbeat()
 
         # TODO: Need to add a function that triggers the FIRST election.
         # Initially all nodes will start as followers. Wait for one timeout and start election i guess?

@@ -18,9 +18,12 @@ class RaftNode:
 
         log_item = LogEntry(globals.current_term, key, value)
         index = log_manager.append(log_item)
-        transport.append_entry_to_peers(log_item, index)
+        is_success_on_majority = transport.append_entry_to_peers(log_item, index)
 
-        return True, ""
+        if is_success_on_majority:
+            globals.set_commit_index(index)
+
+        return is_success_on_majority, ""
 
 
 # Create raft_node singleton

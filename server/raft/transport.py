@@ -135,7 +135,9 @@ class Transport:
 
         log_me(f"AppendEntries RPC success from {success_count} replicas")
 
-        return success_count
+        # Return whether append entries is successful on a majority of peers (
+        # excluding the leader node).
+        return (success_count  >= (num_peers) // 2)
 
     def push_append_entry(self, peer_stub, index, entries: list[LogEntry]):
         # Trivial failure case.
