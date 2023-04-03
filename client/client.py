@@ -54,7 +54,7 @@ def send_put(key, val):
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
-    print(f"PUT {key}:{val} sent! Response error: {resp.error}")
+    print(f"PUT {key}:{val} sent! Response error: {resp.error}, {resp.is_redirect}, {resp.redirect_server}")
 
 
 def send_get(key):
@@ -62,7 +62,7 @@ def send_get(key):
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
-    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value}")
+    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value}, {resp.is_redirect}, {resp.redirect_server}")
 
 
 def send_request_vote(term, candidate_id, logidx, logterm):
@@ -94,6 +94,7 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     # send_put("Key1", "Val1")
+    send_put("Key1", "Val1")
     send_get("Key1")
     send_get("Invalid")
 

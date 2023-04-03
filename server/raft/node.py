@@ -13,9 +13,6 @@ class RaftNode:
             while True:
                 sleep(1)
 
-        if not globals.state == NodeRole.Leader:
-            return False, "node not leader"
-
         log_item = LogEntry(globals.current_term, key, value)
         index = log_manager.append(log_item)
         is_success_on_majority = transport.append_entry_to_peers(log_item, index)

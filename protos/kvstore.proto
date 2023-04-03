@@ -12,6 +12,9 @@ message PutRequest {
 
 message PutResponse {
     string error=1;
+
+    bool is_redirect=4;
+    string redirect_server=5;
 }
 
 message GetRequest {
@@ -22,4 +25,7 @@ message GetResponse {
     bool key_exists=1;
     string key=2;
     string value=3;
+
+    bool is_redirect=4;
+    string redirect_server=5;
 }
