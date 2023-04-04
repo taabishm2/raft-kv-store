@@ -21,10 +21,14 @@ class RaftNode:
 
         t1 = time.time()
         is_success_on_majority = transport.append_entry_to_peers(log_item, index)
+        log_me("Adding commit latency stats")
         stats.add_commit_latency(transport.peer_ips, time.time() - t1, is_success_on_majority)
 
         if is_success_on_majority:
+            log_me("Setting commit index")
             globals.set_commit_index(index)
+
+        log_me(f"Finished PUT {key}:{value} request ")
 
         return is_success_on_majority, ""
 

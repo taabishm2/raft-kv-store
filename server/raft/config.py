@@ -74,10 +74,12 @@ class Globals():
         self.__dict__.update(tmp_dict)
 
     def set_commit_index(self, val):
+        log_me(f"Updating commit-index config to: {val}")
         self.commitIndex = val
         self.flush_config_to_disk()
 
     def set_last_applied(self, val):
+        log_me(f"Updating last-applied config to: {val}")
         self.lastApplied = val
         self.flush_config_to_disk()
 
@@ -88,7 +90,9 @@ class Globals():
         config_file = open(RAFT_CONFIG_FILE_PATH, 'wb')
         log_me(f"Persisting {self.__dict__}")
         pickle.dump(self.__dict__, config_file)
+        log_me("Finished config dump")
         config_file.close()
+        log_me("Closed config file")
 
 
 class NodeRole(enum.Enum):

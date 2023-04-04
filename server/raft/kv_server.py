@@ -26,11 +26,8 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def sync_kv_store_with_logs(self):
         for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
-            key = entry.cmd_key
-            val = entry.cmd_val
-
             with self.kv_store_lock:
-                self.kv_store[key] = val
+                self.kv_store[entry.cmd_key] = entry.cmd_val
                 globals.set_last_applied(globals.commitIndex)
 
     def Put(self, request, context):
@@ -43,14 +40,13 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
         is_consensus, error = raft_node.serve_put_request(request.key, request.value)
 
-        with self.kv_store_lock:
-            if is_consensus:
-                # This can be done in a separate thread.
-                self.sync_kv_store_with_logs()
-            else:
-                error = "No consensus was reached. Try again."
+        if is_consensus:
+            # This can be done in a separate thread.
+            self.sync_kv_store_with_logs()
+        else:
+            error = "No consensus was reached. Try again."
 
-        log_me(f"consensus {is_consensus} error {error}")
+        log_me(f"Consensus {is_consensus}, error {error}")
         return kvstore_pb2.PutResponse(error=error)
 
     def Get(self, request, context):
