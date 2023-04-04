@@ -5,6 +5,7 @@ from .config import NodeRole, globals
 from .utils import *
 from .transport import transport
 from .log_manager import log_manager
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class Election:
@@ -18,8 +19,6 @@ class Election:
         # TODO: Need to add a function that triggers the FIRST election.
         # Initially all nodes will start as followers. Wait for one timeout and start election i guess?
 
-    # TODO:Who triggers this? This should be running in the bg continuously for all servers
-    # Reply(Sweksha): This will only be run when voted as leader.
     def init_heartbeat(self):
         """Initiate periodic heartbeats to the follower nodes if node is leader"""
         if globals.state != NodeRole.Leader: return
@@ -34,7 +33,6 @@ class Election:
 
         try:
             while globals.state == NodeRole.Leader:
-                log_me(f'[Send HEARTBEAT] {peer}')
                 start = time.time()
                 response = transport.send_heartbeat(peer=peer)
                 if response:
@@ -46,7 +44,7 @@ class Election:
                         log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                 delta = time.time() - start
                 time.sleep((globals.HB_TIME - delta) / 1000)
-                
+                print(f'♥ > {peer} {response.is_success}')
         except Exception as e:
             raise e
 
@@ -60,8 +58,8 @@ class Election:
         while globals.state != NodeRole.Leader:
             delta = globals.curr_rand_election_timeout - time.time()
             if delta < 0:
-                self.trigger_election()
                 log_me("Starting an election as heartbeat from leader timed out")
+                self.trigger_election()
             else:
                 time.sleep(delta)
 
@@ -69,7 +67,6 @@ class Election:
         """Checks for missed heartbeats from the leader and start the election"""
 
         try:
-            log_me('Starting timeout')
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
             globals.curr_rand_election_timeout = time.time() + rand_timeout
             if self.timeout_thread and self.timeout_thread.is_alive():
@@ -80,35 +77,31 @@ class Election:
             raise e
 
     def trigger_election(self):
-        if globals.state == NodeRole.Leader:
-            return
-        log_me(f"{globals.name} triggered an election!")
+        if globals.state == NodeRole.Leader: return
+        log_me(f"{globals.name} triggered an election with term {globals.current_term + 1}!")
         globals.current_term += 1
         globals.state = NodeRole.Candidate
-        # todo: how to vote for self?
         globals.voted_for = globals.name
 
-        # TODO: Make this async
-        # TODO: If appendRpc received from someone else with term >= this term: become follower
-        votes_received, election_start = 0, time.time()
-        peer_ips = transport.peer_ips
-        for peer in peer_ips:
-            if self.request_vote(peer):
-                log_me(f"{globals.name} received vote from: {peer}")
-                votes_received += 1
-            else:
-                log_me(f"{globals.name} vote rejected by: {peer}")
+        votes_received = 0
+        num_peers = len(transport.peer_ips)
+        with ThreadPoolExecutor(max_workers=num_peers) as executor:
+            future_rpcs = {executor.submit(self.request_vote, peer) for peer in transport.peer_ips}
+            for completed_task in as_completed(future_rpcs):
+                try:
+                    votes_received += completed_task.result()
+                except Exception as exc:
+                    log_me(str(exc))
+                    # Split vote TODO: check exception is actually timeout before new election
+                    # if time.time() - election_start > globals.election_timeout:
+                    log_me(f"{globals.name} observed a split vote")
+                    time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
+                    # If someone else became leader in the meantime, exit out
+                    if globals.state != NodeRole.Candidate: return
+                    self.trigger_election()
 
-            # Split vote
-            if time.time() - election_start > globals.election_timeout:
-                log_me(f"{globals.name} observed a split vote")
-                time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
-                # If someone else became leader in the meantime, exit out
-                if globals.state != NodeRole.Candidate: return
-                self.trigger_election()
-
-        # Case 1: got majority votes: become leader
-        if votes_received >= len(peer_ips) // 2:
+        # Got majority votes: become leader
+        if votes_received > num_peers // 2:
             globals.state = NodeRole.Leader
             log_me(f"{globals.name} became leader!")
             globals.leader_name = globals.name
@@ -116,10 +109,13 @@ class Election:
 
     def request_vote(self, peer):
         log_me(f'[Requesting vote from] {peer}')
-        response = False
+        response = None
         try:
             response = transport.request_vote(peer=peer)
-        except:
+            if response is not None and response.vote_granted: log_me(f"{globals.name} received vote from: {peer}")
+            else: log_me(f"{globals.name} denied vote by: {peer}")
+        except Exception as e:
+            log_me(str(e))
             pass
         return response is not None and response.vote_granted
 

@@ -5,7 +5,7 @@ from time import sleep
 
 sys.path.append('../')
 
-from time import time
+from time import time, sleep
 import kvstore_pb2
 import kvstore_pb2_grpc
 import raft_pb2
@@ -21,7 +21,7 @@ NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
     "server-3": 'localhost:5442'}
-LEADER_NAME = "server-1"
+LEADER_NAME = "server-2"
 
 
 def random_requests():

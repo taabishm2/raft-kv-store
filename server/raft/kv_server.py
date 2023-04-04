@@ -1,5 +1,6 @@
 import sys
 import threading
+import time
 from concurrent import futures
 
 import grpc
@@ -8,6 +9,7 @@ from .config import globals, NodeRole
 from .log_manager import *
 from .node import raft_node
 from .utils import *
+from .stats import stats
 
 sys.path.append('../../')
 import kvstore_pb2
@@ -32,6 +34,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                 globals.set_last_applied(globals.commitIndex)
 
     def Put(self, request, context):
+        stats.add_kv_request("PUT")
         log_me(f"Put {request.key} {request.value}")
 
         if not globals.state == NodeRole.Leader:
@@ -51,6 +54,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         return kvstore_pb2.PutResponse(error=error)
 
     def Get(self, request, context):
+        stats.add_kv_request("GET")
         log_me(f"Get {request.key}")
 
         if not globals.state == NodeRole.Leader:
@@ -62,12 +66,12 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                                            key=request.key, value=self.kv_store.get(request.key))
 
 
-def main():
+def main(port=5440):
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), grpc_server)
-    grpc_server.add_insecure_port('[::]:5440')
+    grpc_server.add_insecure_port(f'[::]:{port}')
 
-    log_me(f"{globals.name} KV-server listening on: 5440")
+    log_me(f"{globals.name} KV-server listening on: {port}")
     grpc_server.start()
     grpc_server.wait_for_termination()
     log_me(f"{globals.name} KV-server terminated")

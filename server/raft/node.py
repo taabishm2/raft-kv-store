@@ -1,6 +1,9 @@
+import time
+
 from .election import *
 from .transport import transport
 from .log_manager import *
+from .stats import stats
 from time import sleep
 
 
@@ -15,7 +18,10 @@ class RaftNode:
 
         log_item = LogEntry(globals.current_term, key, value)
         index = log_manager.append(log_item)
+
+        t1 = time.time()
         is_success_on_majority = transport.append_entry_to_peers(log_item, index)
+        stats.add_commit_latency(transport.peer_ips, time.time() - t1, is_success_on_majority)
 
         if is_success_on_majority:
             globals.set_commit_index(index)

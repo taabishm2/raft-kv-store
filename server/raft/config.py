@@ -1,16 +1,17 @@
 import enum
 import pickle
-from os import environ, getenv, path
+from os import environ, getenv, path, makedirs
 from random import randrange
 
 from .utils import *
 
 RAFT_BASE_DIR = './logs/logcache'
-RAFT_CONFIG_PATH = RAFT_BASE_DIR + '/config'
+RAFT_CONFIG_FILE_PATH = RAFT_BASE_DIR + '/config'
+
 
 class Globals():
     def __init__(self):
-        if path.exists(RAFT_CONFIG_PATH):
+        if path.exists(RAFT_CONFIG_FILE_PATH):
             self.load()
 
             #  As long as we use kv store (without db),
@@ -37,9 +38,9 @@ class Globals():
         # Raft-node state
         self.name = environ['NAME']
         # TODO: Remove this after election is setup.
-        self.state = NodeRole.Follower 
+        self.state = NodeRole.Follower
         if environ['IS_LEADER'] == "TRUE":
-           self.state = NodeRole.Leader
+            self.state = NodeRole.Leader
 
         self.is_unresponsive = False
         if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
@@ -54,24 +55,19 @@ class Globals():
 
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
-        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 500))
-        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 1000))
+        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 2000))
+        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 3000))
 
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 100ms
-        self.HB_TIME = int(getenv('HB_TIME', 100))
+        self.HB_TIME = int(getenv('HB_TIME', 1000))
 
         log_me("Global config initialized")
 
         # MAX_LOG_WAIT = int(getenv('MAX_LOG_WAIT', 150))
 
-        # TODO Move out of here
-        def chunks(l, n):
-            n = max(1, n)
-            return (l[i:i + n] for i in range(0, len(l), n))
-
     def load(self):
-        config_file = open(RAFT_CONFIG_PATH, 'rb')
+        config_file = open(RAFT_CONFIG_FILE_PATH, 'rb')
         tmp_dict = pickle.load(config_file)
         config_file.close()
 
@@ -89,10 +85,11 @@ class Globals():
         self.leader_name = val
 
     def flush_config_to_disk(self):
-        config_file = open(RAFT_CONFIG_PATH, 'wb')
+        config_file = open(RAFT_CONFIG_FILE_PATH, 'wb')
         log_me(f"Persisting {self.__dict__}")
         pickle.dump(self.__dict__, config_file)
         config_file.close()
+
 
 class NodeRole(enum.Enum):
     Follower = 1

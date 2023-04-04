@@ -15,6 +15,9 @@ class LogEntry:
         self.cmd_key = cmd_key
         self.cmd_val = cmd_val
 
+    def __str__(self):
+        return f"({self.term}-{self.cmd_key}:{self.cmd_val})"
+
 
 class LogManager:
     def __init__(self):
@@ -51,6 +54,7 @@ class LogManager:
         Overwrite entries of replicated log starting from (and including) `start_index` with `log_entry_list`
         Returns false if previous log index term doesn't match and true if overwrite successful
         """
+        log_me(f"OVERWRITE: {start_index}, {str(log_entry_list)}, {previous_term}")
         if start_index > len(self.entries) or \
                 (start_index > 0 and (self.entries[start_index - 1].term != previous_term)):
             return False
