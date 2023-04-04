@@ -121,7 +121,7 @@ class Transport:
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
         peer_stub = self.peer_stubs[peer]
         last_idx = log_manager.get_last_index()
-        if last_idx == 0 or log_manager.get_log_at_index(last_idx) == None:
+        if last_idx <= 0 or log_manager.get_log_at_index(last_idx) == None:
             request = raft_pb2.AERequest(
                 leader_id=globals.name,
                 term=globals.current_term,
