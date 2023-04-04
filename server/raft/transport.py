@@ -172,7 +172,7 @@ class Transport:
         if not is_heartbeat: log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
-        if index < 0 or len(entries) == 0 or attempt_no > globals.heartbeat_retry_limit:
+        if index < 0 or len(entries) == 0 or (is_heartbeat and attempt_no >= globals.heartbeat_retry_limit):
             return 0, None
 
         prev_index = index - 1
