@@ -50,6 +50,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         if globals.current_term > request.last_log_term or (
                 globals.current_term == request.last_log_term and (
                 globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
+            log_me(f"globals.current_term {globals.current_term} ")
             log_me(f"Vote Requested by {request.candidate_id} - denied")
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
 
@@ -106,7 +107,6 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
                 globals.curr_rand_election_timeout = time() + rand_timeout
-                print(time(), "  rand ", rand_timeout)
                 # Set new leader's name.
                 globals.set_leader_name(request.leader_id)
 
@@ -127,6 +127,7 @@ class Transport:
         self.peer_ips = os.environ['PEER_IPS'].split(",")
         # create a dictionary to store the peer IPs and their stubs
         self.peer_stubs = {ip: raft_pb2_grpc.RaftProtocolStub(grpc.insecure_channel(ip)) for ip in self.peer_ips}
+        log_me("Peer stubs initialised!!!")
 
     def send_heartbeat(self, peer):
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
@@ -141,7 +142,7 @@ class Transport:
             response = self.peer_stubs[peer].AppendEntries(request)
         else:
             success, response = self.push_append_entry(
-                peer_stub, last_idx, [log_manager.get_log_at_index(last_idx)], True)
+                peer, last_idx, [log_manager.get_log_at_index(last_idx)], True)
             # Heart beat doesn't update commitIndex of the leader.
 
         return response
@@ -201,7 +202,7 @@ class Transport:
             entries[1:] = entries
             entries[0] = prev_log_entry
             # Retry with updated entries list.
-            return self.push_append_entry(self.peer_stubs[peer_ip], index - 1, entries, is_heartbeat)
+            return self.push_append_entry(peer_ip, index - 1, entries, is_heartbeat)
 
         return 1, resp
 
