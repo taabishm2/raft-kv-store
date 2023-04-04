@@ -89,6 +89,12 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
         # AppendEntries RPC success.
         log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
+        if globals.current_term <= request.term:
+            # Update commit index sent by the leader
+            globals.commitIndex = request.commit_index
+            # Update my term to leader's term
+            globals.current_term = max(request.term, globals.current_term)
+
         return raft_pb2.AEResponse(is_success=True)
 
     def heartbeat_handler(self, request):
