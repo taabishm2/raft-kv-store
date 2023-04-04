@@ -13,6 +13,7 @@ class Election:
         # Start a daemon thread to watch for callbacks from leader.
         self.timeout_thread = None
         self.init_heartbeat()
+        self.init_timeout()
 
         # TODO: Need to add a function that triggers the FIRST election.
         # Initially all nodes will start as followers. Wait for one timeout and start election i guess?
@@ -78,6 +79,8 @@ class Election:
             raise e
 
     def trigger_election(self):
+        if globals.state == NodeRole.Leader:
+            return
         log_me(f"{globals.name} triggered an election!")
         globals.current_term += 1
         globals.state = NodeRole.Candidate

@@ -112,9 +112,18 @@ class Transport:
 
     def send_heartbeat(self, peer):
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
-        request = raft_pb2.AERequest(term=globals.current_term, is_heart_beat=True)
+        peer_stub = self.peer_stubs[peer]
+        last_idx = log_manager.get_last_index()
+        if last_idx == 0:
+            request = raft_pb2.AERequest(
+                term=globals.current_term,
+                is_heart_beat=True)
+            response = self.peer_stubs[peer].AppendEntries(request)
+        else:
+            success, response = self.push_append_entry(
+                peer_stub, last_idx, [log_manager.get_log_at_index(last_idx)], True)
+
         # send the request
-        response = self.peer_stubs[peer].AppendEntries(request)
         print(f"Heartbeat response is {response}")
         return response
 
@@ -128,7 +137,8 @@ class Transport:
                 for stub in self.peer_stubs.values()}
             for completed_task in as_completed(future_rpcs):
                 try:
-                    success_count += completed_task.result()
+                    is_complete, _ = completed_task.result()
+                    success_count += is_complete
                 except Exception as exc:
                     # Unresponsive clients, Internal errors...
                     log_me(f'generated an exception: {exc}')
@@ -139,9 +149,9 @@ class Transport:
         # excluding the leader node).
         return (success_count  >= (num_peers) // 2)
 
-    def push_append_entry(self, peer_stub, index, entries: list[LogEntry]):
+    def push_append_entry(self, peer_stub, index, entries: list[LogEntry], is_heartbeat = False):
         # Trivial failure case.
-        if index < 0:
+        if index <= 0:
             return 0
 
         prev_index = index - 1
@@ -154,7 +164,8 @@ class Transport:
             start_index=index,
             prev_log_index=prev_index,
             prev_log_term=prev_log_entry.term,
-            is_heart_beat=False,
+            is_heart_beat=is_heartbeat,
+            commit_index=globals.commitIndex
         )
 
         for entry in entries:
@@ -169,7 +180,7 @@ class Transport:
             # Retry with updated entries list.
             return self.push_append_entry(peer_stub, index - 1, entries)
 
-        return 1
+        return 1, resp
 
     def request_vote(self, peer):
         request = raft_pb2.VoteRequest(term=globals.current_term, candidate_id=globals.name,
