@@ -21,7 +21,7 @@ NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
     "server-3": 'localhost:5442'}
-LEADER_NAME = "server-1"
+LEADER_NAME = "server-2"
 
 
 def random_requests():
@@ -62,7 +62,7 @@ def send_put(key, val):
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
-    print(f"PUT {key}:{val} sent! Response error: {resp.error}, {resp.is_redirect}, \
+    print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
         {resp.redirect_server}")
 
     if resp.is_redirect:
@@ -78,8 +78,8 @@ def send_get(key):
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
-    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value},\
-        {resp.is_redirect}, {resp.redirect_server}")
+    print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
+         redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
@@ -117,7 +117,11 @@ if __name__ == '__main__':
     # send_put("Key1", "Val1")
     send_put("Key1", "Val1")
     send_get("Key1")
-    send_get("Invalid")
+
+    send_put("Key2", "Val2")
+    send_get("Key2")
+
+    
 
     # Send a vote request
     # resp = send_request_vote(5, "sender-a", 5, 5)

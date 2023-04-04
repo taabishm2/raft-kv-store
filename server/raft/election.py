@@ -28,11 +28,11 @@ class Election:
         for peer in transport.peer_ips:
             Thread(target=self.send_heartbeat, args=(peer,)).start()
 
-    def send_heartbeat(self, peer: str):
+    def send_heartbeat(self, peer: str, attempt_no=0):
         """SEND heartbeat to the peers and get response if LEADER"""
 
         try:
-            while globals.state == NodeRole.Leader:
+            while globals.state == NodeRole.Leader and attempt_no < globals.heartbeat_retry_limit:
                 start = time.time()
                 response = transport.send_heartbeat(peer=peer)
                 if response:
@@ -47,7 +47,7 @@ class Election:
                 print(f'♥ > {peer} {response.is_success}')
         except Exception as e:
             log_me(str(e))
-            self.send_heartbeat(peer)
+            self.send_heartbeat(peer, attempt_no + 1)
 
     def timeout_loop(self):
         '''

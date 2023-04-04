@@ -62,6 +62,8 @@ class Globals():
         # Heartbeat is sent every 100ms
         self.HB_TIME = int(getenv('HB_TIME', 1000))
 
+        self.heartbeat_retry_limit = 3
+
         log_me("Global config initialized")
 
         # MAX_LOG_WAIT = int(getenv('MAX_LOG_WAIT', 150))
