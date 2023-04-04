@@ -42,6 +42,7 @@ message AERequest {
   
   int64 leader_commit_index=7;
   bool is_heart_beat = 8;
+  int64 commit_index = 9;
 }
 
 message AEResponse {

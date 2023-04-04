@@ -17,6 +17,11 @@ THREAD_COUNT = 1
 REQUEST_COUNT = 10
 LOCK = Lock()
 REQ_TIMES = []
+NODE_IPS = {
+    "server-1": 'localhost:5440',
+    "server-2": 'localhost:5441',
+    "server-3": 'localhost:5442'}
+LEADER_NAME = "server-1"
 
 
 def random_requests():
@@ -50,19 +55,35 @@ def random_requests():
 
 
 def send_put(key, val):
-    channel = grpc.insecure_channel('localhost:5440')
+    global NODE_IPS, LEADER_NAME
+
+    LEADER_IP = NODE_IPS[LEADER_NAME]
+    channel = grpc.insecure_channel(LEADER_IP)
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
-    print(f"PUT {key}:{val} sent! Response error: {resp.error}, {resp.is_redirect}, {resp.redirect_server}")
+    print(f"PUT {key}:{val} sent! Response error: {resp.error}, {resp.is_redirect}, \
+        {resp.redirect_server}")
+
+    if resp.is_redirect:
+        LEADER_NAME = resp.redirect_server
+        return send_put(key, val)
 
 
 def send_get(key):
-    channel = grpc.insecure_channel('localhost:5440')
+    global NODE_IPS, LEADER_NAME
+
+    LEADER_IP = NODE_IPS[LEADER_NAME]
+    channel = grpc.insecure_channel(LEADER_IP)
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
-    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value}, {resp.is_redirect}, {resp.redirect_server}")
+    print(f"GET {key} sent! Response: {resp.key_exists}, {resp.key}, {resp.value},\
+        {resp.is_redirect}, {resp.redirect_server}")
+
+    if resp.is_redirect:
+        LEADER_NAME = resp.redirect_server
+        return send_get(key)
 
 
 def send_request_vote(term, candidate_id, logidx, logterm):

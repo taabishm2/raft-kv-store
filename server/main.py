@@ -7,12 +7,11 @@ from .raft import kv_server, transport
 
 
 def main():
-    for port in [(5440,4000)]:
-        kv_server_thread = threading.Thread(target=kv_server.main, args=[port[0]])
-        raft_server_thread = threading.Thread(target=transport.main, args=[port[1]])
+    kv_server_thread = threading.Thread(target=kv_server.main)
+    raft_server_thread = threading.Thread(target=transport.main)
 
-        kv_server_thread.start()
-        raft_server_thread.start()
+    kv_server_thread.start()
+    raft_server_thread.start()
 
     # TODO: remove this (test code)
     #print(f"*** WAITING 10 secs for servers, leader={environ['IS_LEADER']} ***")

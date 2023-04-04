@@ -1,5 +1,6 @@
 import sys
 import threading
+import time
 from concurrent import futures
 
 import grpc
@@ -8,6 +9,7 @@ from .config import globals, NodeRole
 from .log_manager import *
 from .node import raft_node
 from .utils import *
+from .stats import stats
 
 sys.path.append('../../')
 import kvstore_pb2
@@ -32,6 +34,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                 globals.set_last_applied(globals.commitIndex)
 
     def Put(self, request, context):
+        stats.add_kv_request("PUT")
         log_me(f"Put {request.key} {request.value}")
 
         if not globals.state == NodeRole.Leader:
@@ -51,6 +54,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         return kvstore_pb2.PutResponse(error=error)
 
     def Get(self, request, context):
+        stats.add_kv_request("GET")
         log_me(f"Get {request.key}")
 
         if not globals.state == NodeRole.Leader:

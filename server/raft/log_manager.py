@@ -113,7 +113,7 @@ class LogManager:
         log_file.close()
 
     def get_last_index(self):
-        return len(self.entries)
+        return len(self.entries) - 1
 
     def get_latest_term(self):
         if not self.entries: return 0
