@@ -6,7 +6,7 @@ between logs nodes.
 import os
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from time import sleep
+from time import sleep, time
 
 import grpc
 import raft_pb2
@@ -41,11 +41,11 @@ def from_grpc_log_entry(entry):
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
-        log_me(f"Vote Requested by {request.candidate_id}")
         # Vote denied if my term > candidate's or (terms equal but (my log is longer / I have already voted)
         if globals.current_term > request.last_log_term or (
                 globals.current_term == request.last_log_term and (
                 globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
+            log_me(f"Vote Requested by {request.candidate_id} - denied")
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
 
         # If a candidate/leader discovers its term is out of date, immediately revert to follower
@@ -54,6 +54,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         globals.state = NodeRole.Follower
         globals.voted_for = request.candidate_id
 
+        log_me(f"Vote Requested by {request.candidate_id} - given")
         return raft_pb2.VoteResponse(term=request.last_log_term, vote_granted=True)
 
     def AppendEntries(self, request, context):
@@ -86,14 +87,19 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         :param request: AERequest req for heartbeat data sent by the leader node
         :returns: term and latest commit_id of this (follower) node
         """
-        # TODO: What if this node is a candidate or leader?
+        # TODO: In case this node is a candidate or leader,
+        # 1. it should become a follower once again.
+        # 2. stop it's previous role duties.
         try:
             term = request.term
             if globals.current_term <= term:
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
-                globals.curr_rand_election_timeout = time.time() + rand_timeout
-                print(f'got heartbeat from leader {globals.leader_name}')
+                globals.curr_rand_election_timeout = time() + rand_timeout
+                # Set new leader's name.
+                globals.set_leader_name(request.leader_id)
+
+                log_me(f'Received heartbeat from leader {globals.leader_name}')
                 globals.role = NodeRole.Follower
 
                 # Update my term to leader's term
@@ -117,15 +123,15 @@ class Transport:
         last_idx = log_manager.get_last_index()
         if last_idx == 0 or log_manager.get_log_at_index(last_idx) == None:
             request = raft_pb2.AERequest(
+                leader_id=globals.name,
                 term=globals.current_term,
                 is_heart_beat=True)
             response = self.peer_stubs[peer].AppendEntries(request)
         else:
             success, response = self.push_append_entry(
                 peer_stub, last_idx, [log_manager.get_log_at_index(last_idx)], True)
+            # Heart beat doesn't update commitIndex of the leader.
 
-        # send the request
-        print(f"Heartbeat response is {response}")
         return response
 
     # AppendEntries RPC
@@ -153,9 +159,9 @@ class Transport:
     def push_append_entry(self, peer_stub, index, entries: list[LogEntry], is_heartbeat = False):
         # Trivial failure case.
         if index <= 0:
-            return 0
+            return 0, None
         if len(entries) == 0:
-            return 0
+            return 0, None
 
         prev_index = index - 1
         prev_log_entry = log_manager.get_log_at_index(prev_index)
@@ -190,7 +196,7 @@ class Transport:
                                        last_log_index=log_manager.get_last_index(),
                                        last_log_term=log_manager.get_latest_term())
         response = self.peer_stubs[peer].RequestVote(request)
-        print(f"VoteRequest response is {response}")
+        log_me(f"VoteRequest response from {peer} is {response.vote_granted}")
         return response
 
 

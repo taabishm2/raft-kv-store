@@ -17,4 +17,5 @@ def random_timeout(low, high):
 
 
 def log_me(log: str):
+    # Add a print lock?
     print(f"[LOG]: {datetime.now()} {log}")
