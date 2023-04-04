@@ -120,7 +120,7 @@ class LogManager:
         return len(self.entries) - 1
 
     def get_latest_term(self):
-        if not self.entries: return 0
+        if not self.entries: return -1
         return self.entries[-1].term
 
 

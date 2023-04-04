@@ -46,22 +46,21 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
-        # Vote denied if my term > candidate's or (terms equal but (my log is longer / I have already voted)
-        if globals.current_term > request.last_log_term or (
-                globals.current_term == request.last_log_term and (
-                globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
-            log_me(f"globals.current_term {globals.current_term} ")
-            log_me(f"Vote Requested by {request.candidate_id} - denied")
+        if self.deny_vote(request):
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
 
-        # If a candidate/leader discovers its term is out of date, immediately revert to follower
-        globals.current_term = request.last_log_term
-        # TODO: what else to do at this transition?
-        globals.state = NodeRole.Follower
+        if globals.current_term < request.last_log_term:
+            globals.state = NodeRole.Follower
+        globals.current_term = max(globals.current_term, request.term)
         globals.voted_for = request.candidate_id
 
-        log_me(f"Vote Requested by {request.candidate_id} - given")
-        return raft_pb2.VoteResponse(term=request.last_log_term, vote_granted=True)
+        return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
+
+    def deny_vote(self, request):
+        return (globals.current_term > request.term or
+                globals.current_term == request.term and globals.voted_for is not None or
+                log_manager.get_latest_term() > request.last_log_term or
+                log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index)
 
     def AppendEntries(self, request, context):
         if not request.is_heart_beat: log_me(f"AppendEntries from {request.leader_id}")
