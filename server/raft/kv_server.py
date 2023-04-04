@@ -4,7 +4,7 @@ from concurrent import futures
 
 import grpc
 
-from .config import globals
+from .config import globals, NodeRole
 from .log_manager import *
 from .node import raft_node
 from .utils import *
@@ -33,6 +33,11 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def Put(self, request, context):
         log_me(f"Put {request.key} {request.value}")
+
+        if not globals.state == NodeRole.Leader:
+            log_me("Redirecting to leader: " + str(globals.leader_name))
+            return kvstore_pb2.PutResponse(error="Redirect", is_redirect=True, redirect_server=globals.leader_name)
+
         is_consensus, error = raft_node.serve_put_request(request.key, request.value)
 
         with self.kv_store_lock:
@@ -47,6 +52,11 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def Get(self, request, context):
         log_me(f"Get {request.key}")
+
+        if not globals.state == NodeRole.Leader:
+            log_me("Redirecting to leader: " + str(globals.leader_name))
+            return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
+
         with self.kv_store_lock:
             return kvstore_pb2.GetResponse(key_exists=request.key in self.kv_store,
                                            key=request.key, value=self.kv_store.get(request.key))

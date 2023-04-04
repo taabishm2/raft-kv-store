@@ -95,6 +95,8 @@ class Election:
             if self.request_vote(peer):
                 log_me(f"{globals.name} received vote from: {peer}")
                 votes_received += 1
+            else:
+                log_me(f"{globals.name} vote rejected by: {peer}")
 
             # Split vote
             if time.time() - election_start > globals.election_timeout:
@@ -113,7 +115,11 @@ class Election:
 
     def request_vote(self, peer):
         log_me(f'[Requesting vote from] {peer}')
-        response = transport.request_vote(peer=peer)
+        response = False
+        try:
+            response = transport.request_vote(peer=peer)
+        except:
+            pass
         return response is not None and response.vote_granted
 
 
