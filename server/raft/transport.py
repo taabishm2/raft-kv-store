@@ -68,6 +68,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         #TODO: if RPC term is valid, update globals.leader_name and globals.term (in case leadership changed)
         if request.is_heart_beat:
             stats.add_raft_request("Heartbeat")
+            # and request.HasField(prev_log_index):
             return self.heartbeat_handler(request=request)
 
         stats.add_raft_request("AppendEntry")
@@ -109,7 +110,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 globals.current_term = max(term, globals.current_term)
 
             return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
-            # TODO: NNED TO SEND LATEST COMMIT ID ALSOOO???
+
         except Exception as e:
             raise e
 
@@ -124,7 +125,7 @@ class Transport:
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
         peer_stub = self.peer_stubs[peer]
         last_idx = log_manager.get_last_index()
-        if last_idx < 0:
+        if last_idx <= 0 or log_manager.get_log_at_index(last_idx) is None:
             request = raft_pb2.AERequest(
                 leader_id=globals.name,
                 term=globals.current_term,
@@ -161,7 +162,9 @@ class Transport:
 
     def push_append_entry(self, peer_stub, index, entries: list[LogEntry], is_heartbeat = False):
         # Trivial failure case.
-        if index < 0:
+        if index <= 0:
+            return 0, None
+        if len(entries) == 0:
             return 0, None
 
         prev_index = index - 1

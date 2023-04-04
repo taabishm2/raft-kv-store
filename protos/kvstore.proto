@@ -13,8 +13,8 @@ message PutRequest {
 message PutResponse {
     string error=1;
 
-    bool is_redirect=4;
-    string redirect_server=5;
+    bool is_redirect=2;
+    string redirect_server=3;
 }
 
 message GetRequest {
