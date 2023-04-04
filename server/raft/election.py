@@ -107,7 +107,7 @@ class Election:
                 self.trigger_election()
 
         # Case 1: got majority votes: become leader
-        if votes_received >= 1 + len(peer_ips) // 2:
+        if votes_received >= len(peer_ips) // 2:
             globals.state = NodeRole.Leader
             log_me(f"{globals.name} became leader!")
             globals.leader_name = globals.name

@@ -155,8 +155,8 @@ class Transport:
 
     def push_append_entry(self, peer_stub, index, entries: list[LogEntry], is_heartbeat = False):
         # Trivial failure case.
-        if index <= 0:
-            return 0
+        if index < 0:
+            return 0, None
 
         prev_index = index - 1
         prev_log_entry = log_manager.get_log_at_index(prev_index)
