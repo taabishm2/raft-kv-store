@@ -34,7 +34,7 @@ class Election:
 
         try:
             while globals.state == NodeRole.Leader:
-                log_me(f'[PEER HEARTBEAT] {peer}')
+                log_me(f'[Send HEARTBEAT] {peer}')
                 start = time.time()
                 response = transport.send_heartbeat(peer=peer)
                 if response:
@@ -45,7 +45,7 @@ class Election:
                         self.init_timeout()
                 delta = time.time() - start
                 time.sleep((globals.HB_TIME - delta) / 1000)
-                print(f'[PEER HEARTBEAT RESPONSE] {peer} {response}')
+                log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
         except Exception as e:
             raise e
 

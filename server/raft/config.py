@@ -54,8 +54,8 @@ class Globals():
 
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
-        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 250))
-        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 500))
+        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 500))
+        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 1000))
 
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 100ms
@@ -84,6 +84,9 @@ class Globals():
     def set_last_applied(self, val):
         self.lastApplied = val
         self.flush_config_to_disk()
+
+    def set_leader_name(self, val):
+        self.leader_name = val
 
     def flush_config_to_disk(self):
         config_file = open(RAFT_CONFIG_PATH, 'wb')
