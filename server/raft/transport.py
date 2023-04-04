@@ -65,8 +65,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
         #TODO: if RPC term is valid, update globals.leader_name and globals.term (in case leadership changed)
         if request.is_heart_beat:
-            # and request.HasField(prev_log_index):
-            return self.heartbeat_handler(request=request)
+            print("AE is a heartbeat!")
+            self.heartbeat_handler(request=request)
+            if request.start_index == -1:
+                 # Request is a plain heartbeat and has no log entries to be appended. Send the response.
+                return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
 
         start_index, prev_term = request.start_index, request.prev_log_term
         log_entries = [from_grpc_log_entry(entry) for entry in request.entries]
@@ -96,6 +99,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
                 globals.curr_rand_election_timeout = time() + rand_timeout
+                print(time(), "  rand ", rand_timeout)
                 # Set new leader's name.
                 globals.set_leader_name(request.leader_id)
 
@@ -105,7 +109,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Update my term to leader's term
                 globals.current_term = max(term, globals.current_term)
 
-            return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
+            # return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
 
         except Exception as e:
             raise e
@@ -125,6 +129,7 @@ class Transport:
             request = raft_pb2.AERequest(
                 leader_id=globals.name,
                 term=globals.current_term,
+                start_index=-1,
                 is_heart_beat=True)
             response = self.peer_stubs[peer].AppendEntries(request)
         else:
@@ -187,7 +192,7 @@ class Transport:
             entries[1:] = entries
             entries[0] = prev_log_entry
             # Retry with updated entries list.
-            return self.push_append_entry(peer_stub, index - 1, entries)
+            return self.push_append_entry(peer_stub, index - 1, entries, is_heartbeat)
 
         return 1, resp
 

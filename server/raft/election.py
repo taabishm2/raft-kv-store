@@ -43,9 +43,10 @@ class Election:
                         globals.current_term = response.term
                         globals.state = NodeRole.Follower
                         self.init_timeout()
+                        log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                 delta = time.time() - start
                 time.sleep((globals.HB_TIME - delta) / 1000)
-                log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
+                
         except Exception as e:
             raise e
 
