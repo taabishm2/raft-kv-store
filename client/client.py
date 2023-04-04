@@ -5,7 +5,7 @@ from time import sleep
 
 sys.path.append('../')
 
-from time import time
+from time import time, sleep
 import kvstore_pb2
 import kvstore_pb2_grpc
 import raft_pb2

@@ -62,12 +62,12 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                                            key=request.key, value=self.kv_store.get(request.key))
 
 
-def main():
+def main(port=5440):
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), grpc_server)
-    grpc_server.add_insecure_port('[::]:5440')
+    grpc_server.add_insecure_port(f'[::]:{port}')
 
-    log_me(f"{globals.name} KV-server listening on: 5440")
+    log_me(f"{globals.name} KV-server listening on: {port}")
     grpc_server.start()
     grpc_server.wait_for_termination()
     log_me(f"{globals.name} KV-server terminated")

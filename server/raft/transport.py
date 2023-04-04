@@ -26,14 +26,14 @@ def to_grpc_log_entry(entry : LogEntry):
                 value = entry.cmd_val,
             )
         )
-    
+
     return log_entry
 
 def from_grpc_log_entry(entry):
     write_command = entry.command
     log_entry = LogEntry(entry.log_term,
         write_command.key, write_command.value)
-    
+
     return log_entry
 
 #####################################################################
@@ -73,7 +73,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         if not log_manager.overwrite(start_index, log_entries, prev_term):
             log_me(f"AppendEntries request from {request.leader_id} failed")
             return raft_pb2.AEResponse(is_success=False, error="Append Entries overwrite failed")
-        
+
         # AppendEntries RPC success.
         log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
         return raft_pb2.AEResponse(is_success=True)
@@ -174,7 +174,8 @@ class Transport:
     def request_vote(self, peer):
         request = raft_pb2.VoteRequest(term=globals.current_term, candidate_id=globals.name,
                                        last_log_index=log_manager.get_last_index(),
-                                       last_log_term=log_manager.get_latest_term())
+                                       last_log_term=log_manager.get_latest_term(),
+                                       timeout=globals.election_timeout)
         response = self.peer_stubs[peer].RequestVote(request)
         print(f"VoteRequest response is {response}")
         return response
@@ -185,14 +186,14 @@ def from_grpc_log_entry(entry):
     return LogEntry(entry.log_term, write_command.key, write_command.value)
 
 
-def main():
+def main(port=4000):
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
 
     servicer = RaftProtocolServicer()
     raft_pb2_grpc.add_RaftProtocolServicer_to_server(servicer, grpc_server)
-    grpc_server.add_insecure_port('[::]:4000')
+    grpc_server.add_insecure_port(f'[::]:{port}')
 
-    log_me(f"{globals.name} GRPC server listening on: 4000")
+    log_me(f"{globals.name} GRPC server listening on: {port}")
     grpc_server.start()
     grpc_server.wait_for_termination()
     log_me(f"{globals.name} GRPC server terminated")

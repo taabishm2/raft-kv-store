@@ -5,6 +5,7 @@ from .config import NodeRole, globals
 from .utils import *
 from .transport import transport
 from .log_manager import log_manager
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class Election:
@@ -78,33 +79,30 @@ class Election:
             raise e
 
     def trigger_election(self):
+        if globals.state == NodeRole.Leader: return
         log_me(f"{globals.name} triggered an election!")
         globals.current_term += 1
         globals.state = NodeRole.Candidate
-        # todo: how to vote for self?
         globals.voted_for = globals.name
 
-        # TODO: Make this async
-        # TODO: If appendRpc received from someone else with term >= this term: become follower
-        votes_received, election_start = 0, time.time()
-        peer_ips = transport.peer_ips
-        for peer in peer_ips:
-            if self.request_vote(peer):
-                log_me(f"{globals.name} received vote from: {peer}")
-                votes_received += 1
-            else:
-                log_me(f"{globals.name} vote rejected by: {peer}")
+        votes_received = 0
+        num_peers = len(transport.peer_ips)
+        with ThreadPoolExecutor(max_workers=num_peers) as executor:
+            future_rpcs = {executor.submit(self.request_vote, peer) for peer in transport.peer_ips}
+            for completed_task in as_completed(future_rpcs):
+                try:
+                    votes_received += completed_task.result()
+                except Exception as exc:
+                    # Split vote TODO: check exception is actually timeout before new election
+                    # if time.time() - election_start > globals.election_timeout:
+                    log_me(f"{globals.name} observed a split vote")
+                    time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
+                    # If someone else became leader in the meantime, exit out
+                    if globals.state != NodeRole.Candidate: return
+                    self.trigger_election()
 
-            # Split vote
-            if time.time() - election_start > globals.election_timeout:
-                log_me(f"{globals.name} observed a split vote")
-                time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
-                # If someone else became leader in the meantime, exit out
-                if globals.state != NodeRole.Candidate: return
-                self.trigger_election()
-
-        # Case 1: got majority votes: become leader
-        if votes_received >= 1 + len(peer_ips) // 2:
+        # Got majority votes: become leader
+        if votes_received > num_peers // 2:
             globals.state = NodeRole.Leader
             log_me(f"{globals.name} became leader!")
             globals.leader_name = globals.name
@@ -115,6 +113,8 @@ class Election:
         response = False
         try:
             response = transport.request_vote(peer=peer)
+            if response is not None and response.vote_granted: log_me(f"{globals.name} received vote from: {peer}")
+            else: log_me(f"{globals.name} denied vote by: {peer}")
         except:
             pass
         return response is not None and response.vote_granted
