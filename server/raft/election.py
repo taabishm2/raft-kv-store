@@ -19,8 +19,6 @@ class Election:
         # TODO: Need to add a function that triggers the FIRST election.
         # Initially all nodes will start as followers. Wait for one timeout and start election i guess?
 
-    # TODO:Who triggers this? This should be running in the bg continuously for all servers
-    # Reply(Sweksha): This will only be run when voted as leader.
     def init_heartbeat(self):
         """Initiate periodic heartbeats to the follower nodes if node is leader"""
         if globals.state != NodeRole.Leader: return
@@ -35,7 +33,6 @@ class Election:
 
         try:
             while globals.state == NodeRole.Leader:
-                log_me(f'[Send HEARTBEAT] {peer}')
                 start = time.time()
                 response = transport.send_heartbeat(peer=peer)
                 if response:
@@ -46,7 +43,7 @@ class Election:
                         self.init_timeout()
                 delta = time.time() - start
                 time.sleep((globals.HB_TIME - delta) / 1000)
-                log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
+                print(f'♥ > {peer} {response.is_success}')
         except Exception as e:
             raise e
 
@@ -93,7 +90,7 @@ class Election:
                 try:
                     votes_received += completed_task.result()
                 except Exception as exc:
-                    log_me(exc)
+                    log_me(str(exc))
                     # Split vote TODO: check exception is actually timeout before new election
                     # if time.time() - election_start > globals.election_timeout:
                     log_me(f"{globals.name} observed a split vote")
@@ -116,7 +113,8 @@ class Election:
             response = transport.request_vote(peer=peer)
             if response is not None and response.vote_granted: log_me(f"{globals.name} received vote from: {peer}")
             else: log_me(f"{globals.name} denied vote by: {peer}")
-        except:
+        except Exception as e:
+            log_me(str(e))
             pass
         return response is not None and response.vote_granted
 

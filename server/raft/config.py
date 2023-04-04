@@ -8,6 +8,7 @@ from .utils import *
 RAFT_BASE_DIR = './logs/logcache'
 RAFT_CONFIG_FILE_PATH = RAFT_BASE_DIR + '/config'
 
+
 class Globals():
     def __init__(self):
         if path.exists(RAFT_CONFIG_FILE_PATH):
@@ -37,9 +38,9 @@ class Globals():
         # Raft-node state
         self.name = environ['NAME']
         # TODO: Remove this after election is setup.
-        self.state = NodeRole.Follower 
+        self.state = NodeRole.Follower
         if environ['IS_LEADER'] == "TRUE":
-           self.state = NodeRole.Leader
+            self.state = NodeRole.Leader
 
         self.is_unresponsive = False
         if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
@@ -54,12 +55,12 @@ class Globals():
 
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
-        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 1000))
+        self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 2000))
         self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 3000))
 
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 100ms
-        self.HB_TIME = int(getenv('HB_TIME', 100))
+        self.HB_TIME = int(getenv('HB_TIME', 1000))
 
         log_me("Global config initialized")
 
@@ -88,6 +89,7 @@ class Globals():
         log_me(f"Persisting {self.__dict__}")
         pickle.dump(self.__dict__, config_file)
         config_file.close()
+
 
 class NodeRole(enum.Enum):
     Follower = 1

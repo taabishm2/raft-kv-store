@@ -20,6 +20,7 @@ REQUEST_COUNT = 10000
 LOCK = Lock()
 REQ_TIMES = []
 
+
 def random_requests():
     global REQ_TIMES
 
@@ -39,6 +40,7 @@ def random_requests():
         with LOCK:
             REQ_TIMES.append(t2 - t1)
 
+
 if __name__ == '__main__':
     counter = 0
     running_threads = []
@@ -56,6 +58,6 @@ if __name__ == '__main__':
 
     # Printing Summary Stats
     print(f'Put request statistics: %\np50 response time: {np.percentile(REQ_TIMES, q=50)}' +
-    f' seconds\np99 response time: {np.percentile(REQ_TIMES, q=99)} seconds')
+          f' seconds\np99 response time: {np.percentile(REQ_TIMES, q=99)} seconds')
 
     print(f'Completed Client Process!')
