@@ -41,11 +41,11 @@ def from_grpc_log_entry(entry):
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
-        log_me(f"Vote Requested by {request.candidate_id}")
         # Vote denied if my term > candidate's or (terms equal but (my log is longer / I have already voted)
         if globals.current_term > request.last_log_term or (
                 globals.current_term == request.last_log_term and (
                 globals.voted_for is not None or log_manager.get_last_index() > request.last_log_index)):
+            log_me(f"Vote Requested by {request.candidate_id} - denied")
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
 
         # If a candidate/leader discovers its term is out of date, immediately revert to follower
@@ -54,6 +54,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         globals.state = NodeRole.Follower
         globals.voted_for = request.candidate_id
 
+        log_me(f"Vote Requested by {request.candidate_id} - given")
         return raft_pb2.VoteResponse(term=request.last_log_term, vote_granted=True)
 
     def AppendEntries(self, request, context):
@@ -119,7 +120,7 @@ class Transport:
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
         peer_stub = self.peer_stubs[peer]
         last_idx = log_manager.get_last_index()
-        if last_idx == 0:
+        if last_idx < 0:
             request = raft_pb2.AERequest(
                 leader_id=globals.name,
                 term=globals.current_term,
@@ -128,6 +129,7 @@ class Transport:
         else:
             success, response = self.push_append_entry(
                 peer_stub, last_idx, [log_manager.get_log_at_index(last_idx)], True)
+            # Heart beat doesn't update commitIndex of the leader.
 
         return response
 
