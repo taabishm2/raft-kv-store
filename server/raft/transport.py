@@ -173,11 +173,11 @@ class Transport:
         # excluding the leader node).
         return success_count >= num_peers // 2
 
-    def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False, attempt_no=0):
+    def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False):
         if not is_heartbeat: log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
-        if index < 0 or len(entries) == 0 or (is_heartbeat and attempt_no >= globals.heartbeat_retry_limit):
+        if index < 0 or len(entries) == 0:
             return 0, None
 
         prev_index = index - 1
@@ -206,7 +206,7 @@ class Transport:
             entries[1:] = entries
             entries[0] = prev_log_entry
             # Retry with updated entries list.
-            return self.push_append_entry(peer_ip, index - 1, entries, is_heartbeat, attempt_no + 1)
+            return self.push_append_entry(peer_ip, index - 1, entries, is_heartbeat)
 
         return 1, resp
 

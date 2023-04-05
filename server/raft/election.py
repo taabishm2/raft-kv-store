@@ -28,28 +28,26 @@ class Election:
         for peer in transport.peer_ips:
             Thread(target=self.send_heartbeat, args=(peer,)).start()
 
-    def send_heartbeat(self, peer: str, attempt_no=0):
+    def send_heartbeat(self, peer: str):
         """SEND heartbeat to the peers and get response if LEADER"""
-
-        try:
-            while globals.state == NodeRole.Leader and attempt_no < globals.heartbeat_retry_limit:
-                start = time.time()
-                response = transport.send_heartbeat(peer=peer)
-                if response:
-                    # Peer has higher term. Relinquish leadership
-                    if response.term > globals.current_term:
-                        globals.current_term = response.term
-                        globals.state = NodeRole.Follower
-                        self.init_timeout()
-                        log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
-                delta = time.time() - start
-                time.sleep((globals.HB_TIME - delta) / 1000)
-                log_me(f'♥ > {peer} {response.is_success}')
-        except Exception as e:
-            print(f'♥ > {peer} False')
-            log_me(str(e))
-            log_me(f'Retrying ♥ > {peer}')
-            self.send_heartbeat(peer, attempt_no + 1)
+        while True:
+            try:
+                while globals.state == NodeRole.Leader:
+                    start = time.time()
+                    response = transport.send_heartbeat(peer=peer)
+                    if response:
+                        # Peer has higher term. Relinquish leadership
+                        if response.term > globals.current_term:
+                            globals.current_term = response.term
+                            globals.state = NodeRole.Follower
+                            self.init_timeout()
+                            log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
+                    delta = time.time() - start
+                    time.sleep((globals.HB_TIME - delta) / 1000)
+                    log_me(f'♥ > {peer} {response.is_success}')
+            except Exception as e:
+                log_me(f'♥ > {peer} Failed: {str(e)}')
+                time.sleep(globals.HB_TIME * 1.5)
 
     def timeout_loop(self):
         '''
@@ -115,8 +113,10 @@ class Election:
         response = None
         try:
             response = transport.request_vote(peer=peer)
-            if response is not None and response.vote_granted: log_me(f"{globals.name} received vote from: {peer}")
-            else: log_me(f"{globals.name} denied vote by: {peer}")
+            if response is not None and response.vote_granted:
+                log_me(f"{globals.name} received vote from: {peer}")
+            else:
+                log_me(f"{globals.name} denied vote by: {peer}")
         except Exception as e:
             log_me(str(e))
             pass
