@@ -19,6 +19,13 @@ class Globals():
             # we need to set self.lastApplied = 0.
             # TODO: remove it when you use a persistent database.
             self.lastApplied = 0
+            self.state = NodeRole.Follower
+            self.is_unresponsive = False
+            if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
+                self.is_unresponsive = True
+            log_me(f"is_unresponsive? {self.is_unresponsive}")
+
+            self.curr_rand_election_timeout = 0
 
             log_me(f"My global config is {self.__dict__}")
             return
