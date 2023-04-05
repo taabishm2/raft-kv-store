@@ -21,7 +21,7 @@ NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
     "server-3": 'localhost:5442'}
-LEADER_NAME = "server-1"
+LEADER_NAME = "server-2"
 
 
 def random_requests():
@@ -115,11 +115,11 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     # send_put("Key1", "Val1")
-    send_put("Key1", "Val1")
-    send_get("Key1")
+    send_put("Key5", "Val5")
+    send_get("Key5")
 
-    send_put("Key2", "Val2")
-    send_get("Key2")
+    send_put("Key6", "Val6")
+    send_get("Key6")
 
     
 

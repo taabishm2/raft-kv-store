@@ -1,10 +1,11 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y protobuf-compiler python3 python3-pip
+RUN apt-get install -y protobuf-compiler python3 python3-pip memcached
 
 RUN pip3 install grpcio grpcio-tools
 RUN pip3 install protobuf==3.20.*
+RUN pip3 install pymemcache
 
 COPY ./ /raft-kv-store/
 WORKDIR /raft-kv-store/
