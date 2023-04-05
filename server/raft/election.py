@@ -48,7 +48,7 @@ class Election:
                     log_me(f'♥ > {peer} {response.is_success}')
             except Exception as e:
                 log_me(f'♥ > {peer} Failed: {str(e)}')
-                time.sleep(globals.HB_TIME * 1.5)
+                time.sleep(globals.HB_TIME * 1.5 / 1000)
 
     def timeout_loop(self):
         '''
