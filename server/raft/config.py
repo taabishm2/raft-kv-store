@@ -2,7 +2,7 @@ import enum
 import pickle
 from os import environ, getenv, path, makedirs
 from random import randrange
-from threading import Lock
+import time
 
 from .utils import *
 
@@ -23,7 +23,8 @@ class Globals():
             self.is_unresponsive = False
             if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
                 self.is_unresponsive = True
-            log_me(f"is_unresponsive? {self.is_unresponsive}")
+                self.curr_rand_election_timeout = time.time() + 5
+            log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
 
             self.curr_rand_election_timeout = 0
 
@@ -51,20 +52,22 @@ class Globals():
             self.state = NodeRole.Leader
 
         self.is_unresponsive = False
-        if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
-            self.is_unresponsive = True
-        log_me(f"is_unresponsive? {self.is_unresponsive}")
 
         # Other state
         self.leader_name = None
 
         self.election_timeout = 150
         self.curr_rand_election_timeout = 0
+        # if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
+        #     self.is_unresponsive = True
+        #     self.curr_rand_election_timeout = time.time() + 5
+        # log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
 
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
         self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 2000))
         self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 4000))
+        self.unresponsive_time = self.LOW_TIMEOUT // 2
 
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 500ms

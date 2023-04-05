@@ -56,13 +56,15 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
             globals.state = NodeRole.Follower
         globals.current_term = max(globals.current_term, request.term)
         globals.voted_for = request.candidate_id
+        log_me(f"Voted for {request.candidate_id}")
+
         return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
 
     def deny_vote(self, request):
-        log_me(f"Condition 1: {globals.current_term > request.term}")
-        log_me(f"Condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
-        log_me(f"Condition 3: {log_manager.get_latest_term() > request.last_log_term}")
-        log_me(f"Condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
+        log_me(f"{request.candidate_id} vote condition 1: {globals.current_term > request.term}")
+        log_me(f"{request.candidate_id} vote condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
+        log_me(f"{request.candidate_id} vote condition 3: {log_manager.get_latest_term() > request.last_log_term}")
+        log_me(f"{request.candidate_id} vote condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
         return (globals.current_term > request.term or
                 globals.current_term == request.term and globals.voted_for is not None or
                 log_manager.get_latest_term() > request.last_log_term or

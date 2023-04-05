@@ -2,16 +2,18 @@ import threading
 import time
 from os import environ
 
-from .raft.election import election
 from .raft import kv_server, transport
-
+from .raft.election import Election
 
 def main():
-    kv_server_thread = threading.Thread(target=kv_server.main)
     raft_server_thread = threading.Thread(target=transport.main)
-
-    kv_server_thread.start()
     raft_server_thread.start()
+
+    kv_server_thread = threading.Thread(target=kv_server.main)
+    kv_server_thread.start()
+
+    election = Election()
+   
 
     # TODO: remove this (test code)
     #print(f"*** WAITING 10 secs for servers, leader={environ['IS_LEADER']} ***")
