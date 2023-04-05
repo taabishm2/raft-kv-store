@@ -44,10 +44,10 @@ class Election:
                         log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                 delta = time.time() - start
                 time.sleep((globals.HB_TIME - delta) / 1000)
-                print(f'♥ > {peer} {response.is_success}')
+                log_me(f'♥ > {peer} {response.is_success}')
         except Exception as e:
-            print(f'♥ > {peer} {response.is_success}')
             log_me(str(e))
+            log_me(f'Retrying ♥ > {peer}')
             self.send_heartbeat(peer, attempt_no + 1)
 
     def timeout_loop(self):

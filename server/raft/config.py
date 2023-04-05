@@ -56,11 +56,11 @@ class Globals():
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
         self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 2000))
-        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 3000))
+        self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 4000))
 
         # REQUESTS_TIMEOUT = 50
-        # Heartbeat is sent every 100ms
-        self.HB_TIME = int(getenv('HB_TIME', 1000))
+        # Heartbeat is sent every 500ms
+        self.HB_TIME = int(getenv('HB_TIME', 500))
 
         self.heartbeat_retry_limit = 3
 
