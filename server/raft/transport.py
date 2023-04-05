@@ -48,7 +48,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
         with request_vote_rpc_lock:
-            self.handle_request_vote(request)
+            return self.handle_request_vote(request)
 
     def handle_request_vote(self, request):
         if self.deny_vote(request):
