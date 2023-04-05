@@ -48,7 +48,7 @@ class Election:
                     log_me(f'♥ > {peer} {response.is_success}')
             except Exception as e:
                 log_me(f'♥ > {peer} Failed: {str(e)}')
-                time.sleep(globals.HB_TIME * 1.5)
+                time.sleep(globals.HB_TIME * 1.5 / 1000)
 
     def timeout_loop(self):
         '''
@@ -62,6 +62,9 @@ class Election:
             if delta < 0:
                 log_me("Starting an election as heartbeat from leader timed out")
                 self.trigger_election()
+            else:
+                time.sleep(delta)
+        log_me("I am elected as leader")
 
     def init_timeout(self):
         """Checks for missed heartbeats from the leader and start the election"""
