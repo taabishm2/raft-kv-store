@@ -2,6 +2,7 @@ import enum
 import pickle
 from os import environ, getenv, path, makedirs
 from random import randrange
+from threading import Lock
 
 from .utils import *
 

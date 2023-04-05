@@ -57,6 +57,10 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
 
     def deny_vote(self, request):
+        log_me(f"Condition 1: {globals.current_term > request.term}")
+        log_me(f"Condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
+        log_me(f"Condition 3: {log_manager.get_latest_term() > request.last_log_term}")
+        log_me(f"Condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
         return (globals.current_term > request.term or
                 globals.current_term == request.term and globals.voted_for is not None or
                 log_manager.get_latest_term() > request.last_log_term or
@@ -64,10 +68,10 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def AppendEntries(self, request, context):
         if not request.is_heart_beat: log_me(f"AppendEntries from {request.leader_id}")
-        if globals.is_unresponsive:
-            log_me("Am going to sleepzzzz")
-            while True:
-                sleep(1)
+        # if globals.is_unresponsive:
+        #     log_me("Am going to sleepzzzz")
+        #     while True:
+        #         sleep(1)
 
         # TODO: if RPC term is valid, update globals.leader_name and globals.term (in case leadership changed)
         if request.is_heart_beat:
