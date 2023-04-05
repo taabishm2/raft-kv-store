@@ -13,6 +13,7 @@ import raft_pb2
 import raft_pb2_grpc
 
 from .config import NodeRole, globals, request_vote_rpc_lock
+
 from .log_manager import LogEntry, log_manager
 from .utils import *
 from .stats import stats
@@ -46,7 +47,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
-        with globals.request_vote_lock:
+        with request_vote_rpc_lock:
             self.handle_request_vote(request)
 
     def handle_request_vote(self, request):
