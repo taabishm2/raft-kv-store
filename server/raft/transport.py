@@ -12,7 +12,7 @@ import grpc
 import raft_pb2
 import raft_pb2_grpc
 
-from .config import NodeRole, globals
+from .config import NodeRole, globals, request_vote_rpc_lock
 from .log_manager import LogEntry, log_manager
 from .utils import *
 from .stats import stats
@@ -46,14 +46,16 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
+        with globals.request_vote_lock:
+            self.handle_request_vote(request)
+
+    def handle_request_vote(self, request):
         if self.deny_vote(request):
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
-
         if globals.current_term < request.last_log_term:
             globals.state = NodeRole.Follower
         globals.current_term = max(globals.current_term, request.term)
         globals.voted_for = request.candidate_id
-
         return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
 
     def deny_vote(self, request):

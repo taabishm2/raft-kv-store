@@ -105,3 +105,4 @@ class NodeRole(enum.Enum):
 
 
 globals = Globals()
+request_vote_rpc_lock = Lock()
