@@ -124,11 +124,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Set new leader's name.
                 globals.set_leader_name(request.leader_id)
 
-                log_me(f'{globals.leader_name} > ♥')
-                globals.role = NodeRole.Follower
+                globals.state = NodeRole.Follower
 
                 # Update my term to leader's term
                 globals.current_term = max(term, globals.current_term)
+                log_me(f'{globals.leader_name} > ♥, term {globals.current_term} state {globals.state}')
 
             # return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
 

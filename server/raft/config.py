@@ -68,7 +68,7 @@ class Globals():
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
         self.LOW_TIMEOUT = int(getenv('LOW_TIMEOUT', 2000))
         self.HIGH_TIMEOUT = int(getenv('HIGH_TIMEOUT', 4000))
-        self.unresponsive_time = self.LOW_TIMEOUT // 2
+        self.unresponsive_time = self.LOW_TIMEOUT / 2000.0
 
         # REQUESTS_TIMEOUT = 50
         # Heartbeat is sent every 500ms

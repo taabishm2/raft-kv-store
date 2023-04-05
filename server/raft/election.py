@@ -66,7 +66,7 @@ class Election:
     def init_timeout(self):
         """Checks for missed heartbeats from the leader and start the election"""
         if environ['IS_UNRESPONSIVE'] == "TRUE":
-            log_me("Node was configured to be UNRESPONSIVE: waiting 5 secs")
+            log_me("Node was configured to be UNRESPONSIVE, will wait before starting timeout loop")
             time.sleep(globals.unresponsive_time)
         try:
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
@@ -84,6 +84,7 @@ class Election:
         globals.current_term += 1
         globals.state = NodeRole.Candidate
         globals.voted_for = globals.name
+        globals.flush_config_to_disk()
 
         votes_received = 0
         num_peers = len(transport.peer_ips)
