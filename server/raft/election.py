@@ -62,14 +62,12 @@ class Election:
             if delta < 0:
                 log_me("Starting an election as heartbeat from leader timed out")
                 self.trigger_election()
-            else:
-                time.sleep(delta)
 
     def init_timeout(self):
         """Checks for missed heartbeats from the leader and start the election"""
         if environ['IS_UNRESPONSIVE'] == "TRUE":
             log_me("Node was configured to be UNRESPONSIVE: waiting 5 secs")
-            time.sleep(5)
+            time.sleep(globals.unresponsive_time)
         try:
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
             globals.curr_rand_election_timeout = time.time() + rand_timeout
@@ -110,6 +108,10 @@ class Election:
             log_me(f"{globals.name} became leader!")
             globals.leader_name = globals.name
             self.init_heartbeat()
+        else:
+            # If I am not elected, I will try election after sometime.
+            rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
+            time.sleep(rand_timeout)
 
     def request_vote(self, peer):
         log_me(f'[Requesting vote from] {peer}')
@@ -124,6 +126,3 @@ class Election:
             log_me(str(e))
             pass
         return response is not None and response.vote_granted
-
-
-election = Election()
