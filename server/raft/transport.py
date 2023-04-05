@@ -12,7 +12,8 @@ import grpc
 import raft_pb2
 import raft_pb2_grpc
 
-from .config import NodeRole, globals
+from .config import NodeRole, globals, request_vote_rpc_lock
+
 from .log_manager import LogEntry, log_manager
 from .utils import *
 from .stats import stats
@@ -46,9 +47,12 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
+        with request_vote_rpc_lock:
+            return self.handle_request_vote(request)
+
+    def handle_request_vote(self, request):
         if self.deny_vote(request):
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
-
         if globals.current_term < request.last_log_term:
             globals.state = NodeRole.Follower
         globals.current_term = max(globals.current_term, request.term)
@@ -120,11 +124,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 # Set new leader's name.
                 globals.set_leader_name(request.leader_id)
 
-                log_me(f'{globals.leader_name} > ♥')
-                globals.role = NodeRole.Follower
+                globals.state = NodeRole.Follower
 
                 # Update my term to leader's term
                 globals.current_term = max(term, globals.current_term)
+                log_me(f'{globals.leader_name} > ♥, term {globals.current_term} state {globals.state}')
 
             # return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
 
