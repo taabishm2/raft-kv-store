@@ -1,4 +1,5 @@
 import time
+from os import environ
 from threading import Thread
 
 from .config import NodeRole, globals
@@ -66,7 +67,9 @@ class Election:
 
     def init_timeout(self):
         """Checks for missed heartbeats from the leader and start the election"""
-
+        if environ['IS_UNRESPONSIVE'] == "True":
+            log_me("Node was configured to be UNRESPONSIVE: waiting 5 secs")
+            time.sleep(5)
         try:
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
             globals.curr_rand_election_timeout = time.time() + rand_timeout
