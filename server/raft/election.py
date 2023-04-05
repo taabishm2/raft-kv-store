@@ -46,7 +46,7 @@ class Election:
                 time.sleep((globals.HB_TIME - delta) / 1000)
                 print(f'♥ > {peer} {response.is_success}')
         except Exception as e:
-            print(f'♥ > {peer} {response.is_success}')
+            print(f'♥ > {peer} False')
             log_me(str(e))
             self.send_heartbeat(peer, attempt_no + 1)
 
