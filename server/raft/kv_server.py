@@ -23,7 +23,6 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         super().__init__()
         self.kv_store_lock = threading.Lock()
         self.client = base.Client(('memcached', 11211))
-        self.client.flush_all()
 
         self.sync_kv_store_with_logs()
 
@@ -61,8 +60,9 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
         with self.kv_store_lock:
-            return kvstore_pb2.GetResponse(key_exists=request.key in self.kv_store,
-                                           key=request.key, value=self.client.get(request.key))
+            cached_val = self.client.get(request.key)
+            return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
+                                           key=request.key, value=cached_val)
 
 
 def main(port=5440):
