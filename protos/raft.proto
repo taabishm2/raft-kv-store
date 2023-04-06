@@ -6,6 +6,10 @@ service RaftProtocol {
 
   // AppendEntries for leader raft node to override/append its log entries into followers.
   rpc AppendEntries(AERequest) returns (AEResponse) {}
+
+  rpc AddNode(NodeRequest) returns (NodeResponse) {}
+
+  rpc RemoveNode(NodeRequest) returns (NodeResponse) {}
 }
 
 message VoteRequest {
@@ -49,4 +53,12 @@ message AEResponse {
   int64 term = 1;
   bool is_success=2;
   string error=3;
+}
+
+message NodeRequest {
+  string peer_ip=1;
+}
+
+message NodeResponse {
+  string error=1;
 }

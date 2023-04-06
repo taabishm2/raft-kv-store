@@ -94,6 +94,24 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
     return resp
 
+def send_add_node(peer_ip):
+    for i in range(len(NODE_IPS)):
+        print(f"==localhost:400{i}")
+        channel = grpc.insecure_channel(f"localhost:400{i}")
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
+        print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
+
+def send_remove_node(peer_ip):
+    for i, node in enumerate(NODE_IPS):
+    # for i in range(len(NODE_IPS)):
+        if peer_ip == NODE_IPS[node]:
+            continue
+        print(f"==localhost:400{i}")
+        channel = grpc.insecure_channel(f"localhost:400{i}")
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
+        print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
 
 if __name__ == '__main__':
     counter = 0
@@ -113,20 +131,22 @@ if __name__ == '__main__':
     # for t in running_threads:
     #     t.join()
 
-    # Send single put and 2 gets (one valid one invalid)
-    # send_put("Key1", "Val1")
+    Send single put and 2 gets (one valid one invalid)
+    send_put("Key1", "Val1")
     send_put("Key1", "Val1")
     send_get("Key1")
 
     send_put("Key2", "Val2")
     send_get("Key2")
 
-    
+    # send_add_node("server-4:4000")
 
-    # Send a vote request
-    # resp = send_request_vote(5, "sender-a", 5, 5)
-    # assert resp.term == 5 and resp.vote_granted == True and resp.error == ""
-    # resp = send_request_vote(5, "sender-b", 5, 5)
-    # assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
+    # send_put("Key3", "Val3")
+    # send_get("Key1")
+
+    # send_put("Key2", "Val2")
+    # send_get("Key2")
+
+    # send_remove_node("server-4:4000")
 
     print(f'Completed Client Process!')
