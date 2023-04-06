@@ -1,7 +1,9 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y protobuf-compiler python3 python3-pip memcached
+RUN apt-get install -y protobuf-compiler python3 python3-pip
+RUN apt-get install -y memcached
+RUN rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install grpcio grpcio-tools
 RUN pip3 install protobuf==3.20.*

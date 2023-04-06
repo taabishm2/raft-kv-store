@@ -23,9 +23,9 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         super().__init__()
         self.kv_store = dict()
         self.kv_store_lock = threading.Lock()
+        self.client = base.Client(('localhost', 11211))
 
         self.sync_kv_store_with_logs()
-        self.client = base.Client(('localhost', 11211))
 
     def sync_kv_store_with_logs(self):
         for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
