@@ -122,10 +122,10 @@ class Election:
         response = None
         try:
             response = transport.request_vote(peer=peer)
-            if response is not None and response.vote_granted:
-                # log_me(f"{globals.name} received vote from: {peer}")
-            else:
-                # log_me(f"{globals.name} denied vote by: {peer}")
+            # if response is not None and response.vote_granted:
+            #     # log_me(f"{globals.name} received vote from: {peer}")
+            # else:
+            #     # log_me(f"{globals.name} denied vote by: {peer}")
         except Exception as e:
             # log_me(str(e))
             pass

@@ -8,7 +8,7 @@ import numpy as np
 def perf_get_rpc_latency():
     latencies = []
     batch_throughputs = []
-    for thread_count in range(1, 1000, 200):
+    for thread_count in range(1, 500, 10):
         batch = []
         print(f"Testing with {thread_count} threads")
         with ThreadPoolExecutor(max_workers=thread_count) as executor:
@@ -39,7 +39,7 @@ def perf_get_rpc_latency():
 def perf_put_rpc_latency():
     latencies = []
     batch_throughputs = []
-    for thread_count in range(1, 1000, 200):
+    for thread_count in range(1, 300, 20):
         batch = []
         print(f"Testing with {thread_count} threads")
         with ThreadPoolExecutor(max_workers=thread_count) as executor:
@@ -94,5 +94,5 @@ def perf_degradation():
 
 if __name__ == "__main__":
     perf_get_rpc_latency()
-    #perf_put_rpc_latency()
+    # perf_put_rpc_latency()
     # perf_degradation()

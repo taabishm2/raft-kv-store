@@ -72,7 +72,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
                 log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index)
 
     def AppendEntries(self, request, context):
-        if not request.is_heart_beat: # log_me(f"AppendEntries from {request.leader_id}")
+        # if not request.is_heart_beat: # log_me(f"AppendEntries from {request.leader_id}")
         # if globals.is_unresponsive:
         #     # log_me("Am going to sleepzzzz")
         #     while True:
@@ -175,6 +175,7 @@ class Transport:
                 except Exception as exc:
                     # Unresponsive clients, Internal errors...
                     # log_me(f'generated an exception: {exc}')
+                    pass
 
         # log_me(f"AppendEntries RPC success from {success_count} replicas")
 
@@ -183,7 +184,7 @@ class Transport:
         return success_count >= num_peers // 2
 
     def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False):
-        if not is_heartbeat: # log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
+        # if not is_heartbeat: # log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
         if index < 0 or len(entries) == 0:
