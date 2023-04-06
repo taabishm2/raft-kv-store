@@ -21,14 +21,14 @@ NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
     "server-3": 'localhost:5442'}
-LEADER_NAME = "server-2"
+LEADER_NAME = "server-1"
 
 
 def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel('localhost:5440')
+    channel = grpc.insecure_channel('localhost:5441')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):

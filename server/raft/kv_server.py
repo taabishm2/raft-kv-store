@@ -22,7 +22,8 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
     def __init__(self):
         super().__init__()
         self.kv_store_lock = threading.Lock()
-        self.client = base.Client(('memcached', 11211))
+        print("i'm staring memchahe wish me luckkkkk!!!!")
+        self.client = base.Client(('localhost', 11211))
 
         self.sync_kv_store_with_logs()
 
