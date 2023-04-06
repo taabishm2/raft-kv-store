@@ -115,11 +115,11 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     # send_put("Key1", "Val1")
-    send_put("Key5", "Val5")
-    send_get("Key5")
+    #send_put("Key43", "Val534")
+    send_get("Key43")
 
-    send_put("Key6", "Val6")
-    send_get("Key6")
+    #send_put("Key6", "Val6")
+    #send_get("Key6")
 
     
 

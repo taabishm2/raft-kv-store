@@ -21,16 +21,15 @@ from pymemcache.client import base
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
     def __init__(self):
         super().__init__()
-        self.kv_store = dict()
         self.kv_store_lock = threading.Lock()
-        self.client = base.Client(('localhost', 11211))
+        self.client = base.Client(('memcached', 11211))
+        self.client.flush_all()
 
         self.sync_kv_store_with_logs()
 
     def sync_kv_store_with_logs(self):
         for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
             with self.kv_store_lock:
-                self.kv_store[entry.cmd_key] = entry.cmd_val
                 self.client.set(entry.cmd_key, entry.cmd_val)
                 globals.set_last_applied(globals.commitIndex)
 
