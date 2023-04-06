@@ -93,6 +93,6 @@ def perf_degradation():
 
 
 if __name__ == "__main__":
-    #perf_get_rpc_latency()
+    perf_get_rpc_latency()
     #perf_put_rpc_latency()
-    perf_degradation()
+    # perf_degradation()

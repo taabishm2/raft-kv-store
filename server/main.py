@@ -16,7 +16,7 @@ def main():
     election = Election()
 
     # TODO: remove this (test code)
-    # print(f"*** WAITING 10 secs for servers, leader={environ['IS_LEADER']} ***")
+    # # print(f"*** WAITING 10 secs for servers, leader={environ['IS_LEADER']} ***")
     # time.sleep(5)
     # if environ['IS_LEADER'] == "TRUE": election.trigger_election()
 

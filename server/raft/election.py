@@ -24,7 +24,7 @@ class Election:
         """Initiate periodic heartbeats to the follower nodes if node is leader"""
         if globals.state != NodeRole.Leader: return
 
-        log_me(f"Node is leader for the term {globals.current_term}, Starting periodic heartbeats to peers")
+        # log_me(f"Node is leader for the term {globals.current_term}, Starting periodic heartbeats to peers")
         # send heartbeat to follower peers
         for peer in transport.peer_ips:
             Thread(target=self.send_heartbeat, args=(peer,)).start()
@@ -42,12 +42,12 @@ class Election:
                             globals.current_term = response.term
                             globals.state = NodeRole.Follower
                             self.init_timeout()
-                            log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
+                            # log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                     delta = time.time() - start
                     time.sleep((globals.HB_TIME - delta) / 1000)
-                    log_me(f'♥ > {peer} {response.is_success}')
+                    # log_me(f'♥ > {peer} {response.is_success}')
             except Exception as e:
-                log_me(f'💔 > {peer} Failed: {str(e)}')
+                # log_me(f'💔 > {peer} Failed: {str(e)}')
                 time.sleep(globals.HB_TIME * 1.5 / 1000)
 
     def timeout_loop(self):
@@ -60,16 +60,16 @@ class Election:
         while globals.state != NodeRole.Leader:
             delta = globals.curr_rand_election_timeout - time.time()
             if delta < 0:
-                log_me("Starting an election as heartbeat from leader timed out")
+                # log_me("Starting an election as heartbeat from leader timed out")
                 self.trigger_election()
             else:
                 time.sleep(delta)
-        log_me("I am elected as leader")
+        # log_me("I am elected as leader")
 
     def init_timeout(self):
         """Checks for missed heartbeats from the leader and start the election"""
         if environ['IS_UNRESPONSIVE'] == "TRUE":
-            log_me("Node was configured to be UNRESPONSIVE, will wait before starting timeout loop")
+            # log_me("Node was configured to be UNRESPONSIVE, will wait before starting timeout loop")
             time.sleep(globals.unresponsive_time)
         try:
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
@@ -83,7 +83,7 @@ class Election:
 
     def trigger_election(self):
         if globals.state == NodeRole.Leader: return
-        log_me(f"{globals.name} triggered an election with term {globals.current_term + 1}!")
+        # log_me(f"{globals.name} triggered an election with term {globals.current_term + 1}!")
         globals.current_term += 1
         globals.state = NodeRole.Candidate
         globals.voted_for = globals.name
@@ -97,10 +97,10 @@ class Election:
                 try:
                     votes_received += completed_task.result()
                 except Exception as exc:
-                    log_me(str(exc))
+                    # log_me(str(exc))
                     # Split vote TODO: check exception is actually timeout before new election
                     # if time.time() - election_start > globals.election_timeout:
-                    log_me(f"{globals.name} observed a split vote")
+                    # log_me(f"{globals.name} observed a split vote")
                     time.sleep(random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT))
                     # If someone else became leader in the meantime, exit out
                     if globals.state != NodeRole.Candidate: return
@@ -109,7 +109,7 @@ class Election:
         # Got majority votes: become leader
         if votes_received >= num_peers // 2 and globals.state == NodeRole.Candidate:
             globals.state = NodeRole.Leader
-            log_me(f"{globals.name} became leader!")
+            # log_me(f"{globals.name} became leader!")
             globals.leader_name = globals.name
             self.init_heartbeat()
         else:
@@ -118,15 +118,15 @@ class Election:
             time.sleep(rand_timeout)
 
     def request_vote(self, peer):
-        log_me(f'[Requesting vote from] {peer}')
+        # log_me(f'[Requesting vote from] {peer}')
         response = None
         try:
             response = transport.request_vote(peer=peer)
             if response is not None and response.vote_granted:
-                log_me(f"{globals.name} received vote from: {peer}")
+                # log_me(f"{globals.name} received vote from: {peer}")
             else:
-                log_me(f"{globals.name} denied vote by: {peer}")
+                # log_me(f"{globals.name} denied vote by: {peer}")
         except Exception as e:
-            log_me(str(e))
+            # log_me(str(e))
             pass
         return response is not None and response.vote_granted

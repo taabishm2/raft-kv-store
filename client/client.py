@@ -48,7 +48,7 @@ def random_requests():
         else:
             t1 = time()
             resp = stub.Get(kvstore_pb2.GetRequest(key=thread_key))
-            print(f'[LOG] for {thread_key}, got {resp.value} {resp.key_exists}')
+            # print(f'[LOG] for {thread_key}, got {resp.value} {resp.key_exists}')
             t2 = time()
             with LOCK:
                 REQ_TIMES.append(t2 - t1)
@@ -65,7 +65,7 @@ def send_put(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     t2 = time()
 
-    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    # # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
     #     {resp.redirect_server}")
 
     if resp.is_redirect:
@@ -86,7 +86,7 @@ def send_get(key):
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
     t2 = time()
 
-    # print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
+    # # print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
     #      redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
     if resp.is_redirect:
@@ -101,7 +101,7 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     stub = raft_pb2_grpc.RaftProtocolStub(channel)
 
     resp = stub.RequestVote(raft_pb2.VoteRequest(term=term, candidate_id=candidate_id, last_log_index=logidx, last_log_term=logterm))
-    print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
+    # print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
     return resp
 
 
@@ -124,9 +124,9 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-    # send_put("Key1", "Val1")
+    send_put("Key1", "Val1")
     #send_put("Key43", "Val534")
-    send_get("Key43")
+    # send_get("Key43")
 
     #send_put("Key6", "Val6")
     #send_get("Key6")
@@ -139,4 +139,4 @@ if __name__ == '__main__':
     # resp = send_request_vote(5, "sender-b", 5, 5)
     # assert resp.term == 5 and resp.vote_granted == False and resp.error == ""
 
-    print(f'Completed Client Process!')
+    # print(f'Completed Client Process!')

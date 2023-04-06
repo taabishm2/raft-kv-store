@@ -35,7 +35,7 @@ class LogManager:
         file = open(RAFT_LOG_PATH, 'rb')
         self.entries = pickle.load(file)
         num_entries = len(self.entries)
-        log_me(f'Loaded {num_entries} log entries from disk')
+        # log_me(f'Loaded {num_entries} log entries from disk')
         file.close()
 
     def append(self, log_entry):
@@ -54,7 +54,7 @@ class LogManager:
         Overwrite entries of replicated log starting from (and including) `start_index` with `log_entry_list`
         Returns false if previous log index term doesn't match and true if overwrite successful
         """
-        log_me(f"OVERWRITE: {start_index}, {str(log_entry_list)}, {previous_term}")
+        # log_me(f"OVERWRITE: {start_index}, {str(log_entry_list)}, {previous_term}")
         if start_index > len(self.entries) or \
                 (start_index > 0 and (self.entries[start_index - 1].term != previous_term)):
             return False

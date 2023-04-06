@@ -25,11 +25,11 @@ class Globals():
             if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
                 self.is_unresponsive = True
                 self.curr_rand_election_timeout = time.time() + 5
-            log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
+            # log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
 
             self.curr_rand_election_timeout = 0
 
-            log_me(f"My global config is {self.__dict__}")
+            # log_me(f"My global config is {self.__dict__}")
             return
 
         # Persistent state on all servers. Updated on stable storage before responding to RPCs
@@ -62,7 +62,7 @@ class Globals():
         # if getenv('IS_UNRESPONSIVE', False) == 'TRUE':
         #     self.is_unresponsive = True
         #     self.curr_rand_election_timeout = time.time() + 5
-        # log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
+        # # log_me(f"is_unresponsive? {self.is_unresponsive} {self.curr_rand_election_timeout}")
 
         # Syntax: os.getenv(key, default).
         # Heartbeat timeout T= 250ms. Random timeout in range [T, 2T] unless specified in the env vars
@@ -76,7 +76,7 @@ class Globals():
 
         self.heartbeat_retry_limit = 3
 
-        log_me("Global config initialized")
+        # log_me("Global config initialized")
 
         # MAX_LOG_WAIT = int(getenv('MAX_LOG_WAIT', 150))
 
@@ -88,12 +88,12 @@ class Globals():
         self.__dict__.update(tmp_dict)
 
     def set_commit_index(self, val):
-        log_me(f"Updating commit-index config to: {val}")
+        # log_me(f"Updating commit-index config to: {val}")
         self.commitIndex = val
         self.flush_config_to_disk()
 
     def set_last_applied(self, val):
-        log_me(f"Updating last-applied config to: {val}")
+        # log_me(f"Updating last-applied config to: {val}")
         self.lastApplied = val
         self.flush_config_to_disk()
 
@@ -102,11 +102,11 @@ class Globals():
 
     def flush_config_to_disk(self):
         config_file = open(RAFT_CONFIG_FILE_PATH, 'wb')
-        log_me(f"Persisting {self.__dict__}")
+        # log_me(f"Persisting {self.__dict__}")
         pickle.dump(self.__dict__, config_file)
-        log_me("Finished config dump")
+        # log_me("Finished config dump")
         config_file.close()
-        log_me("Closed config file")
+        # log_me("Closed config file")
 
 
 class NodeRole(enum.Enum):

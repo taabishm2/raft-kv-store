@@ -56,8 +56,8 @@ if __name__ == '__main__':
     for t in running_threads:
         t.join()
 
-    # Printing Summary Stats
-    print(f'Put request statistics: %\np50 response time: {np.percentile(REQ_TIMES, q=50)}' +
+    # # printing Summary Stats
+    # print(f'Put request statistics: %\np50 response time: {np.percentile(REQ_TIMES, q=50)}' +
           f' seconds\np99 response time: {np.percentile(REQ_TIMES, q=99)} seconds')
 
-    print(f'Completed Client Process!')
+    # print(f'Completed Client Process!')

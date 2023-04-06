@@ -4,9 +4,9 @@ from random import randrange
 
 def debug(func):
     def wrapper(*args, **kwargs):
-        print(f"[LOG] >>> Calling {func.__name__} with args={args} kwargs={kwargs}")
+        # print(f"[LOG] >>> Calling {func.__name__} with args={args} kwargs={kwargs}")
         result = func(*args, **kwargs)
-        print(f"[LOG] <<< {func.__name__} returned {result}")
+        # print(f"[LOG] <<< {func.__name__} returned {result}")
         return result
 
     return wrapper
@@ -17,5 +17,5 @@ def random_timeout(low, high):
 
 
 def log_me(log: str):
-    # Add a print lock?
+    # Add a # print lock?
     print(f"[LOG]: {datetime.now()} {log}")

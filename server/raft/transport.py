@@ -57,24 +57,24 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
             globals.state = NodeRole.Follower
         globals.current_term = max(globals.current_term, request.term)
         globals.voted_for = request.candidate_id
-        log_me(f"Voted for {request.candidate_id}")
+        # log_me(f"Voted for {request.candidate_id}")
 
         return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
 
     def deny_vote(self, request):
-        log_me(f"{request.candidate_id} vote condition 1: {globals.current_term > request.term}")
-        log_me(f"{request.candidate_id} vote condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
-        log_me(f"{request.candidate_id} vote condition 3: {log_manager.get_latest_term() > request.last_log_term}")
-        log_me(f"{request.candidate_id} vote condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
+        # log_me(f"{request.candidate_id} vote condition 1: {globals.current_term > request.term}")
+        # log_me(f"{request.candidate_id} vote condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
+        # log_me(f"{request.candidate_id} vote condition 3: {log_manager.get_latest_term() > request.last_log_term}")
+        # log_me(f"{request.candidate_id} vote condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
         return (globals.current_term > request.term or
                 globals.current_term == request.term and globals.voted_for is not None or
                 log_manager.get_latest_term() > request.last_log_term or
                 log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index)
 
     def AppendEntries(self, request, context):
-        if not request.is_heart_beat: log_me(f"AppendEntries from {request.leader_id}")
+        if not request.is_heart_beat: # log_me(f"AppendEntries from {request.leader_id}")
         # if globals.is_unresponsive:
-        #     log_me("Am going to sleepzzzz")
+        #     # log_me("Am going to sleepzzzz")
         #     while True:
         #         sleep(1)
 
@@ -92,11 +92,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
         # Try to append entry at given index.
         if not log_manager.overwrite(start_index, log_entries, prev_term):
-            log_me(f"AppendEntries request from {request.leader_id} failed")
+            # log_me(f"AppendEntries request from {request.leader_id} failed")
             return raft_pb2.AEResponse(is_success=False, error="Append Entries overwrite failed")
 
         # AppendEntries RPC success.
-        log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
+        # log_me(f"AppendEntries request success from {request.leader_id}, starting with {request.start_index}")
         if globals.current_term <= request.term:
             # Update commit index sent by the leader
             globals.commitIndex = request.commit_index
@@ -128,7 +128,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
                 # Update my term to leader's term
                 globals.current_term = max(term, globals.current_term)
-                log_me(f'{globals.leader_name} > ♥, term {globals.current_term} state {globals.state}')
+                # log_me(f'{globals.leader_name} > ♥, term {globals.current_term} state {globals.state}')
 
             # return raft_pb2.AEResponse(term=globals.current_term, is_success=True)
 
@@ -141,7 +141,7 @@ class Transport:
         self.peer_ips = os.environ['PEER_IPS'].split(",")
         # create a dictionary to store the peer IPs and their stubs
         self.peer_stubs = {ip: raft_pb2_grpc.RaftProtocolStub(grpc.insecure_channel(ip)) for ip in self.peer_ips}
-        log_me("Peer stubs initialised!!!")
+        # log_me("Peer stubs initialised!!!")
 
     def send_heartbeat(self, peer):
         """ If this node is leader, send heartbeat to the follower at address `peer`"""
@@ -170,20 +170,20 @@ class Transport:
             for completed_task in as_completed(future_rpcs):
                 try:
                     is_complete, _ = completed_task.result()
-                    log_me(f"Response received {completed_task.result()}")
+                    # log_me(f"Response received {completed_task.result()}")
                     success_count += is_complete
                 except Exception as exc:
                     # Unresponsive clients, Internal errors...
-                    log_me(f'generated an exception: {exc}')
+                    # log_me(f'generated an exception: {exc}')
 
-        log_me(f"AppendEntries RPC success from {success_count} replicas")
+        # log_me(f"AppendEntries RPC success from {success_count} replicas")
 
         # Return whether append entries is successful on a majority of peers (
         # excluding the leader node).
         return success_count >= num_peers // 2
 
     def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False):
-        if not is_heartbeat: log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
+        if not is_heartbeat: # log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
         if index < 0 or len(entries) == 0:
@@ -211,7 +211,7 @@ class Transport:
         resp = self.peer_stubs[peer_ip].AppendEntries(request, timeout=5)
 
         if not resp.is_success:
-            log_me(f"Log mismatch for {peer_ip}, going to index:{index - 1}")
+            # log_me(f"Log mismatch for {peer_ip}, going to index:{index - 1}")
             entries[1:] = entries
             entries[0] = prev_log_entry
             # Retry with updated entries list.
@@ -224,7 +224,7 @@ class Transport:
                                        last_log_index=log_manager.get_last_index(),
                                        last_log_term=log_manager.get_latest_term())
         response = self.peer_stubs[peer].RequestVote(request, timeout=globals.election_timeout)
-        log_me(f"VoteRequest response from {peer} is {response.vote_granted}")
+        # log_me(f"VoteRequest response from {peer} is {response.vote_granted}")
         return response
 
 
@@ -234,16 +234,16 @@ def from_grpc_log_entry(entry):
 
 
 def main(port=4000):
-    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=100000))
 
     servicer = RaftProtocolServicer()
     raft_pb2_grpc.add_RaftProtocolServicer_to_server(servicer, grpc_server)
     grpc_server.add_insecure_port(f'[::]:{port}')
 
-    log_me(f"{globals.name} GRPC server listening on: {port}")
+    # log_me(f"{globals.name} GRPC server listening on: {port}")
     grpc_server.start()
     grpc_server.wait_for_termination()
-    log_me(f"{globals.name} GRPC server terminated")
+    # log_me(f"{globals.name} GRPC server terminated")
 
 
 transport = Transport()
