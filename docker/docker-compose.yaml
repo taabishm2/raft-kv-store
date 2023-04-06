@@ -12,7 +12,7 @@ services:
             - IS_LEADER=FALSE
             - IS_UNRESPONSIVE=FALSE
             - PEER_IPS=server-2:4000,server-3:4000
-            - MEMCACHED_HOST=memcached
+            # - MEMCACHED_HOST=memcached
 
     server-2:
         image: kvstore
@@ -27,7 +27,7 @@ services:
             - IS_LEADER=FALSE
             - IS_UNRESPONSIVE=FALSE
             - PEER_IPS=server-1:4000,server-3:4000
-            - MEMCACHED_HOST=memcached
+            # - MEMCACHED_HOST=memcached
 
     server-3:
         image: kvstore
@@ -42,10 +42,10 @@ services:
             - IS_LEADER=FALSE
             - IS_UNRESPONSIVE=FALSE
             - PEER_IPS=server-1:4000,server-2:4000
-            - MEMCACHED_HOST=memcached
+            # - MEMCACHED_HOST=memcached
 
-    memcached:
-        image: memcached:alpine
+    # memcached:
+    #     image: memcached:alpine
 
 #    client:
 #        image: kvstore
