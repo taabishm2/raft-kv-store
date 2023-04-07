@@ -20,7 +20,8 @@ REQ_TIMES = []
 NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
-    "server-3": 'localhost:5442'}
+    "server-3": 'localhost:5442',
+    "server-4": 'localhost:5443'}
 LEADER_NAME = "server-1"
 
 
@@ -64,10 +65,11 @@ def send_put(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
         {resp.redirect_server}")
-
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
         return send_put(key, val)
+    else:
+        return resp
 
 
 def send_get(key):
@@ -84,6 +86,8 @@ def send_get(key):
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
         return send_get(key)
+    else:
+        return resp
 
 
 def send_request_vote(term, candidate_id, logidx, logterm):
@@ -113,6 +117,29 @@ def send_remove_node(peer_ip):
         resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
         print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
 
+
+def basic_consistency_test():
+    # Try to get a value not written
+    resp = send_get("Key0")
+    # Send single put and 2 gets (one valid one invalid)
+    # send_put("Key1", "Val1")
+    for i in range(10):
+        send_put(f"Key{i}", f"Val{i}")
+    send_put("Key43", "Val534")
+    send_get("Key43")
+
+    send_put("Key6", "Val6")
+    send_get("Key6")
+
+    # send_add_node("server-4:4000")
+
+    send_put("Key3", "Val3")
+    send_get("Key1")
+
+    send_put("Key2", "Val2")
+    send_get("Key2")
+
+
 if __name__ == '__main__':
     counter = 0
     running_threads = []
@@ -133,20 +160,20 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     # send_put("Key1", "Val1")
-    #send_put("Key43", "Val534")
+    send_put("Key43", "Val534")
     send_get("Key43")
 
-    #send_put("Key6", "Val6")
-    #send_get("Key6")
+    send_put("Key6", "Val6")
+    send_get("Key6")
 
     # send_add_node("server-4:4000")
 
-    # send_put("Key3", "Val3")
-    # send_get("Key1")
+    send_put("Key3", "Val3")
+    send_get("Key1")
 
-    # send_put("Key2", "Val2")
-    # send_get("Key2")
+    send_put("Key2", "Val2")
+    send_get("Key2")
 
-    # send_remove_node("server-4:4000")
+    send_remove_node("server-4:4000")
 
     print(f'Completed Client Process!')
