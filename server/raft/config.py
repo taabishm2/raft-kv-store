@@ -47,6 +47,7 @@ class Globals():
 
         # Raft-node state
         self.name = environ['NAME']
+        self.ip_port = self.name + f':4000' # The ip_port in which server communicates with raft peers.
         # TODO: Remove this after election is setup.
         self.state = NodeRole.Follower
         if environ['IS_LEADER'] == "TRUE":
