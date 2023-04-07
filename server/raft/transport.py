@@ -48,11 +48,14 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def AddNode(self, request, context):
         stats.add_raft_request("AddNode")
         log_me(f"Received an add node request for ip: {request.peer_ip}")
+        if request.peer_ip == globals.ip_port:
+            log_me(f"ERROR: can't add myself duh")
+            return raft_pb2.NodeResponse(error="Self-Node add request!")
         if request.peer_ip in transport.peer_ips:
-            log_me(f"WARN: Received add for a node already in cluster")
+            log_me(f"ERROR: Received add for a node already in cluster")
             return raft_pb2.NodeResponse(error="Node already in cluster!")
         transport.peer_ips.append(request.peer_ip)
-        print(f"added {request.peer_ip}.....new size= {len(transport.peer_ips)}")
+        log_me(f"added {request.peer_ip}.....new size= {len(transport.peer_ips)}")
         channel = grpc.insecure_channel(request.peer_ip)
         transport.peer_stubs[request.peer_ip] = raft_pb2_grpc.RaftProtocolStub(channel)
 
@@ -61,13 +64,16 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def RemoveNode(self, request, context):
         stats.add_raft_request("RemoveNode")
         log_me(f"Received a remove node request for ip: {request.peer_ip}")
+        if request.peer_ip == globals.ip_port:
+            log_me(f"ERROR: can't remove myself duh")
+            return raft_pb2.NodeResponse(error="Self-Node remove request!")
         if request.peer_ip not in transport.peer_ips:
-            log_me(f"WARN: Received remove node for a node not in cluster")
+            log_me(f"ERROR: Received remove node  {request.peer_ip}. Node not part of cluster")
             return raft_pb2.NodeResponse(error="Node not in cluster!")
         transport.peer_ips.remove(request.peer_ip)
         del transport.peer_stubs[request.peer_ip]
-        print(f"remove {request.peer_ip}.....new size= {len(transport.peer_ips)}")
-        return raft_pb2.NodeResponse(error="Node removed successfully!")
+        log_me(f"remove {request.peer_ip}.....new size= {len(transport.peer_ips)}")
+        return raft_pb2.NodeResponse(error=f"Node connection to {request.peer_ip} removed successfully from {globals.name}!")
 
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
@@ -148,7 +154,6 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         try:
             term = request.term
             if globals.current_term <= term:
-                print("Recieved Hearteat from a valid leader, my term = ", globals.current_term)
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
                 globals.curr_rand_election_timeout = time() + rand_timeout

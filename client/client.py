@@ -22,8 +22,25 @@ NODE_IPS = {
     "server-2": 'localhost:5441',
     "server-3": 'localhost:5442',
     "server-4": 'localhost:5443'}
+NODE_DOCKER_IPS = {
+    "server-1": 'server-1:4000',
+    "server-2": 'server-2:4000',
+    "server-3": 'server-3:4000'}
+NODE_LOCAL_PORT = {
+    "server-1": 'localhost:4000',
+    "server-2": 'localhost:4001',
+    "server-3": 'localhost:4002'
+}
+
 LEADER_NAME = "server-1"
 
+def get_follower():
+    for node in NODE_IPS:
+        if node != LEADER_NAME:
+            return node
+
+    # All are leaders(?).
+    return None
 
 def random_requests():
     global REQ_TIMES
@@ -71,6 +88,27 @@ def send_put(key, val):
     else:
         return resp
 
+def best_effort_put(key, val):
+    global NODE_IPS, LEADER_NAME
+
+    for node in NODE_IPS:
+        print(f"Contacting {node}")
+        try:
+            LEADER_IP = NODE_IPS[node]
+            channel = grpc.insecure_channel(LEADER_IP)
+            stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+            resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
+            print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+                {resp.redirect_server}")
+            if resp.is_redirect:
+                LEADER_NAME = resp.redirect_server
+                return send_put(key, val)
+            else:
+                # Put succeeded.
+                return None
+        except Exception as e:
+            print(f"{node} is down. Contacting another server")
 
 def send_get(key):
     global NODE_IPS, LEADER_NAME
@@ -98,24 +136,23 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
     return resp
 
-def send_add_node(peer_ip):
-    for i in range(len(NODE_IPS)):
-        print(f"==localhost:400{i}")
-        channel = grpc.insecure_channel(f"localhost:400{i}")
+def send_add_node(peer_name):
+    for name in NODE_IPS:
+        print(f"contacting {NODE_LOCAL_PORT[name]}")
+        channel = grpc.insecure_channel(NODE_LOCAL_PORT[name])
         stub = raft_pb2_grpc.RaftProtocolStub(channel)
-        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
-        print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
+        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[peer_name]))
+        print(f"Add Node for {peer_name} sent! Response error:{resp.error}")
 
-def send_remove_node(peer_ip):
-    for i, node in enumerate(NODE_IPS):
-    # for i in range(len(NODE_IPS)):
-        if peer_ip == NODE_IPS[node]:
-            continue
-        print(f"==localhost:400{i}")
-        channel = grpc.insecure_channel(f"localhost:400{i}")
+def send_remove_node(peer_name):
+    for name in NODE_IPS:
+        if name == peer_name:
+            continue  # skip remove node message for current node.
+        print(f"Sending remove rpc > {name}")
+        channel = grpc.insecure_channel(NODE_LOCAL_PORT[name])
         stub = raft_pb2_grpc.RaftProtocolStub(channel)
-        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
-        print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
+        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[peer_name]))
+        print(f"Remove Node for {peer_name} sent! Response error:{resp.error}")
 
 
 def basic_consistency_test():
@@ -159,9 +196,16 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
+<<<<<<< HEAD
     # send_put("Key1", "Val1")
     send_put("Key43", "Val534")
     send_get("Key43")
+=======
+
+    send_put("Key1", "Val1")
+    send_put("Key1", "Val1")
+    send_get("Key1")
+>>>>>>> 4b89f87a435deed84786997b635490deceedfb29
 
     send_put("Key6", "Val6")
     send_get("Key6")

@@ -25,10 +25,9 @@ class Election:
             """Initiate periodic heartbeats to the follower nodes if node is leader"""
             if globals.state != NodeRole.Leader: return
 
-            log_me(f"Node is leader for the term {globals.current_term}, Starting periodic heartbeats to peers")
+            log_me(f"I think i am the leader for {globals.current_term}, sending heartbeats to peers")
             # send heartbeat to follower peers
             for peer in transport.peer_ips:
-                print("===================sending to peer!!!", peer)
                 Thread(target=self.send_heartbeat, args=(peer,)).start()
             time.sleep(globals.HB_TIME / 1000)
 
@@ -48,9 +47,9 @@ class Election:
                     log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                 # delta = time.time() - start
                 # time.sleep((globals.HB_TIME - delta) / 1000)
-            log_me(f'♥ > {peer} {response.is_success}')
+            log_me(f'♥ > {peer} {response.is_success} 🥹')
         except Exception as e:
-            log_me(f'💔 > {peer} Failed: {str(e)}')
+            log_me(f'💔 > {peer} Failed: {str(e)} 🥹')
             # time.sleep(globals.HB_TIME * 1.5 / 1000)
 
     def timeout_loop(self):
