@@ -113,16 +113,17 @@ class LogManager:
         globals.last_applied += 1
 
     def flush_log_to_disk(self):
-        log_file = shelve.open(RAFT_LOG_PATH, 'wb')
-        if len(log_file.keys()) == 0:
+        log_file = shelve.open(RAFT_LOG_PATH)
+        if len(self.entries) == 0:
             log_file["SHELF_SIZE"] = 0
-        log_file["SHELF_SIZE"] = self.entries[-1]
-        log_file["SHELF_SIZE"] += 1
+        else:
+            log_file[log_file["SHELF_SIZE"]] = self.entries[-1]
+            log_file["SHELF_SIZE"] += 1
 
         log_file.close()
 
     def flush_many_log_to_disk(self, start_idx, val_list):
-        log_file = shelve.open(RAFT_LOG_PATH, 'wb')
+        log_file = shelve.open(RAFT_LOG_PATH)
 
         for i in range(start_idx, start_idx + len(val_list)):
             log_file[i] = val_list[i - start_idx]
