@@ -15,19 +15,22 @@ sys.path.append('../../')
 import kvstore_pb2
 import kvstore_pb2_grpc
 
+from pymemcache.client import base
+
 
 class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
     def __init__(self):
         super().__init__()
-        self.kv_store = dict()
         self.kv_store_lock = threading.Lock()
+        print("i'm staring memchahe wish me luckkkkk!!!!")
+        self.client = base.Client(('localhost', 11211))
 
         self.sync_kv_store_with_logs()
 
     def sync_kv_store_with_logs(self):
         for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
             with self.kv_store_lock:
-                self.kv_store[entry.cmd_key] = entry.cmd_val
+                self.client.set(entry.cmd_key, entry.cmd_val)
                 globals.set_last_applied(globals.commitIndex)
 
     def Put(self, request, context):
@@ -58,8 +61,9 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
         with self.kv_store_lock:
-            return kvstore_pb2.GetResponse(key_exists=request.key in self.kv_store,
-                                           key=request.key, value=self.kv_store.get(request.key))
+            cached_val = self.client.get(request.key)
+            return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
+                                           key=request.key, value=cached_val)
 
 
 def main(port=5440):

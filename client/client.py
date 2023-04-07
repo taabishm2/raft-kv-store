@@ -28,7 +28,7 @@ def random_requests():
     global REQ_TIMES
 
     # ADDR = f'127.0.0.1:{PORT}'
-    channel = grpc.insecure_channel('localhost:5440')
+    channel = grpc.insecure_channel('localhost:5441')
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     for i in range(REQUEST_COUNT):
@@ -131,13 +131,13 @@ if __name__ == '__main__':
     # for t in running_threads:
     #     t.join()
 
-    Send single put and 2 gets (one valid one invalid)
-    send_put("Key1", "Val1")
-    send_put("Key1", "Val1")
-    send_get("Key1")
+    # Send single put and 2 gets (one valid one invalid)
+    # send_put("Key1", "Val1")
+    #send_put("Key43", "Val534")
+    send_get("Key43")
 
-    send_put("Key2", "Val2")
-    send_get("Key2")
+    #send_put("Key6", "Val6")
+    #send_get("Key6")
 
     # send_add_node("server-4:4000")
 
