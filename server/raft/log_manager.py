@@ -33,11 +33,11 @@ class LogManager:
         if not os.path.exists(RAFT_LOG_PATH):
             self.flush_log_to_disk()  # Create empty log file
 
-        file = open(RAFT_LOG_PATH, 'rb')
-        self.entries = pickle.load(file)
-        num_entries = len(self.entries)
+        log_shelf = shelve.open(RAFT_LOG_PATH)
+        num_entries = log_shelf["SHELF_SIZE"]
+        self.entries = [log_shelf[i] for i in range(num_entries)]
         # log_me(f'Loaded {num_entries} log entries from disk')
-        file.close()
+        log_shelf.close()
 
     def append(self, log_entry):
         """
@@ -62,7 +62,7 @@ class LogManager:
 
         with self.lock:
             self.entries[start_index:] = log_entry_list
-            self.flush_log_to_disk()
+            self.flush_many_log_to_disk(start_index, log_entry_list)
 
         return True
 
@@ -114,7 +114,20 @@ class LogManager:
 
     def flush_log_to_disk(self):
         log_file = shelve.open(RAFT_LOG_PATH, 'wb')
-        pickle.dump(self.entries, log_file)
+        if len(log_file.keys()) == 0:
+            log_file["SHELF_SIZE"] = 0
+        log_file["SHELF_SIZE"] = self.entries[-1]
+        log_file["SHELF_SIZE"] += 1
+
+        log_file.close()
+
+    def flush_many_log_to_disk(self, start_idx, val_list):
+        log_file = shelve.open(RAFT_LOG_PATH, 'wb')
+
+        for i in range(start_idx, start_idx + len(val_list)):
+            log_file[i] = val_list[i - start_idx]
+
+        log_file["SHELF_SIZE"] = start_idx + len(val_list) + 1
         log_file.close()
 
     def get_last_index(self):
