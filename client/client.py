@@ -54,6 +54,26 @@ def random_requests():
                 REQ_TIMES.append(t2 - t1)
 
 
+def send_put_for_val(key, val):
+    global NODE_IPS, LEADER_NAME
+
+    LEADER_IP = NODE_IPS[LEADER_NAME]
+    channel = grpc.insecure_channel(LEADER_IP)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+    t1 = time()
+    resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
+    t2 = time()
+
+    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    #     {resp.redirect_server}")
+
+    if resp.is_redirect:
+        LEADER_NAME = resp.redirect_server
+        return send_put(key, val)
+
+    return resp
+
 def send_put(key, val):
     global NODE_IPS, LEADER_NAME
 
@@ -65,7 +85,7 @@ def send_put(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     t2 = time()
 
-    # # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
     #     {resp.redirect_server}")
 
     if resp.is_redirect:
@@ -85,8 +105,8 @@ def send_get(key):
     t1 = time()
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
     t2 = time()
-
-    # # print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
+    #
+    # print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
     #      redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
     if resp.is_redirect:
@@ -125,6 +145,8 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     send_put("Key1", "Val1")
+    send_get("Key1")
+    send_get("Key2")
     #send_put("Key43", "Val534")
     # send_get("Key43")
 
