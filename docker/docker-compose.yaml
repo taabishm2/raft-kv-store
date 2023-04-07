@@ -47,6 +47,21 @@ services:
     # memcached:
     #     image: memcached:alpine
 
+    server-4:
+        image: kvstore
+        volumes:
+            - "../server/server.sh:/start.sh"
+            - "../logs/logcache/server4:/raft-kv-store/logs/logcache"
+        ports:
+            - "127.0.0.1:5443:5440"
+            - "127.0.0.1:4003:4000"
+        environment:
+            - NAME=server-4
+            - IS_LEADER=FALSE
+            - IS_UNRESPONSIVE=FALSE
+            - PEER_IPS=server-1:4000,server-2:4000,server-3:4000
+
+
 #    client:
 #        image: kvstore
 #        volumes:

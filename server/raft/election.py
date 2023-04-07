@@ -21,34 +21,37 @@ class Election:
         # Initially all nodes will start as followers. Wait for one timeout and start election i guess?
 
     def init_heartbeat(self):
-        """Initiate periodic heartbeats to the follower nodes if node is leader"""
-        if globals.state != NodeRole.Leader: return
+        while True:
+            """Initiate periodic heartbeats to the follower nodes if node is leader"""
+            if globals.state != NodeRole.Leader: return
 
-        log_me(f"Node is leader for the term {globals.current_term}, Starting periodic heartbeats to peers")
-        # send heartbeat to follower peers
-        for peer in transport.peer_ips:
-            Thread(target=self.send_heartbeat, args=(peer,)).start()
+            log_me(f"Node is leader for the term {globals.current_term}, Starting periodic heartbeats to peers")
+            # send heartbeat to follower peers
+            for peer in transport.peer_ips:
+                print("===================sending to peer!!!", peer)
+                Thread(target=self.send_heartbeat, args=(peer,)).start()
+            time.sleep(globals.HB_TIME / 1000)
 
     def send_heartbeat(self, peer: str):
         """SEND heartbeat to the peers and get response if LEADER"""
-        while True:
-            try:
-                while globals.state == NodeRole.Leader:
-                    start = time.time()
-                    response = transport.send_heartbeat(peer=peer)
-                    if response:
-                        # Peer has higher term. Relinquish leadership
-                        if response.term > globals.current_term:
-                            globals.current_term = response.term
-                            globals.state = NodeRole.Follower
-                            self.init_timeout()
-                            log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
-                    delta = time.time() - start
-                    time.sleep((globals.HB_TIME - delta) / 1000)
-                    log_me(f'♥ > {peer} {response.is_success}')
-            except Exception as e:
-                log_me(f'💔 > {peer} Failed: {str(e)}')
-                time.sleep(globals.HB_TIME * 1.5 / 1000)
+        # while True:
+        try:
+            # while globals.state == NodeRole.Leader:
+                # start = time.time()
+            response = transport.send_heartbeat(peer=peer)
+            if response:
+                # Peer has higher term. Relinquish leadership
+                if response.term > globals.current_term:
+                    globals.current_term = response.term
+                    globals.state = NodeRole.Follower
+                    self.init_timeout()
+                    log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
+                # delta = time.time() - start
+                # time.sleep((globals.HB_TIME - delta) / 1000)
+            log_me(f'♥ > {peer} {response.is_success}')
+        except Exception as e:
+            log_me(f'💔 > {peer} Failed: {str(e)}')
+            # time.sleep(globals.HB_TIME * 1.5 / 1000)
 
     def timeout_loop(self):
         '''

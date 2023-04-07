@@ -45,6 +45,30 @@ def from_grpc_log_entry(entry):
 
 class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
+    def AddNode(self, request, context):
+        stats.add_raft_request("AddNode")
+        log_me(f"Received an add node request for ip: {request.peer_ip}")
+        if request.peer_ip in transport.peer_ips:
+            log_me(f"WARN: Received add for a node already in cluster")
+            return raft_pb2.NodeResponse(error="Node already in cluster!")
+        transport.peer_ips.append(request.peer_ip)
+        print(f"added {request.peer_ip}.....new size= {len(transport.peer_ips)}")
+        channel = grpc.insecure_channel(request.peer_ip)
+        transport.peer_stubs[request.peer_ip] = raft_pb2_grpc.RaftProtocolStub(channel)
+
+        return raft_pb2.NodeResponse(error="Node added successfully!")
+
+    def RemoveNode(self, request, context):
+        stats.add_raft_request("RemoveNode")
+        log_me(f"Received a remove node request for ip: {request.peer_ip}")
+        if request.peer_ip not in transport.peer_ips:
+            log_me(f"WARN: Received remove node for a node not in cluster")
+            return raft_pb2.NodeResponse(error="Node not in cluster!")
+        transport.peer_ips.remove(request.peer_ip)
+        del transport.peer_stubs[request.peer_ip]
+        print(f"remove {request.peer_ip}.....new size= {len(transport.peer_ips)}")
+        return raft_pb2.NodeResponse(error="Node removed successfully!")
+
     def RequestVote(self, request, context):
         stats.add_raft_request("RequestVote")
         with request_vote_rpc_lock:
@@ -62,16 +86,22 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=True)
 
     def deny_vote(self, request):
-        log_me(f"{request.candidate_id} vote condition 1: {globals.current_term > request.term}")
+        if (f"{request.candidate_id}:4000") not in transport.peer_ips:
+            log_me(f"WARN: Received vote request from node {request.candidate_id}:4000 outside the cluster. Denying it!")
+            return True
+        log_me(f"{request.candidate_id} vote condition 1:{globals.current_term} ==== {request.term} === {globals.current_term > request.term}")
         log_me(f"{request.candidate_id} vote condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
-        log_me(f"{request.candidate_id} vote condition 3: {log_manager.get_latest_term() > request.last_log_term}")
-        log_me(f"{request.candidate_id} vote condition 4: {log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
+        log_me(f"{request.candidate_id} vote condition 3: log_manager.get_latest_term() {log_manager.get_latest_term()} request.last_log_term== {request.last_log_term} ===== {log_manager.get_latest_term() > request.last_log_term}")
+        log_me(f"{request.candidate_id} vote condition 4: log_manager.get_last_index() = {log_manager.get_last_index()} = ={log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index}")
         return (globals.current_term > request.term or
                 globals.current_term == request.term and globals.voted_for is not None or
                 log_manager.get_latest_term() > request.last_log_term or
                 log_manager.get_latest_term() == request.last_log_term and log_manager.get_last_index() > request.last_log_index)
 
     def AppendEntries(self, request, context):
+        if (f"{request.leader_id}:4000") not in transport.peer_ips:
+            log_me(f"WARN: Received AppendEntry/heartbeat from node {request.leader_id} outside the cluster. Ignoring it!")
+            return raft_pb2.AEResponse(is_success=False)
         if not request.is_heart_beat: log_me(f"AppendEntries from {request.leader_id}")
         # if globals.is_unresponsive:
         #     log_me("Am going to sleepzzzz")
@@ -118,12 +148,12 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         try:
             term = request.term
             if globals.current_term <= term:
+                print("Recieved Hearteat from a valid leader, my term = ", globals.current_term)
                 # Got heartbeat from a leader with valid term
                 rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
                 globals.curr_rand_election_timeout = time() + rand_timeout
                 # Set new leader's name.
                 globals.set_leader_name(request.leader_id)
-
                 globals.state = NodeRole.Follower
 
                 # Update my term to leader's term
@@ -226,6 +256,8 @@ class Transport:
         response = self.peer_stubs[peer].RequestVote(request, timeout=globals.election_timeout)
         log_me(f"VoteRequest response from {peer} is {response.vote_granted}")
         return response
+    
+    # def add_node(self, peer)
 
 
 def from_grpc_log_entry(entry):
