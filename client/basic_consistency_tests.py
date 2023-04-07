@@ -31,10 +31,28 @@ def read_after_read_consistency():
 
     print(f":) Read after read consistency passed!!\n\n")
 
+def durability_test():
+    # 
+    # Commit is persisted across leader crashes
+    # 
+    client.send_put("KeyDurable", "ValDurable")
+    resp = client.send_get("KeyDurable")
+    assert resp.key_exists is True, "Written Key{i} not found in db"
+
+    print(f"Removing the leader node {client.LEADER_NAME} from cluster")
+    client.send_remove_node(client.LEADER_NAME)
+    
+    resp = client.send_get("KeyDurable")
+    assert resp.key_exists is True, "Key is not persisted across crash."
+    print(f":) Durabilty test passed!!\n\n")
+
 if __name__ == '__main__':
     print("Running Read after write consistency test!!\n\n")
     read_after_write_consistency()
     print("======================================================")
     print("\n\nRunning Read after read consistency test!!\n\n")
     read_after_read_consistency()
+    print("======================================================")
+    print("\n\nRunning durability test!!\n\n")
+    durability_test()
     print("======================================================")
