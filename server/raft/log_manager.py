@@ -1,5 +1,6 @@
 import os
 import pickle
+import shelve
 from threading import Lock
 
 from .config import globals
@@ -112,7 +113,7 @@ class LogManager:
         globals.last_applied += 1
 
     def flush_log_to_disk(self):
-        log_file = open(RAFT_LOG_PATH, 'wb')
+        log_file = shelve.open(RAFT_LOG_PATH, 'wb')
         pickle.dump(self.entries, log_file)
         log_file.close()
 
