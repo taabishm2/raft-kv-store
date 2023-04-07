@@ -48,8 +48,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def AddNode(self, request, context):
         stats.add_raft_request("AddNode")
         log_me(f"Received an add node request for ip: {request.peer_ip}")
+        if request.peer_ip == globals.ip_port:
+            log_me(f"ERROR: can't add myself duh")
+            return raft_pb2.NodeResponse(error="Self-Node add request!")
         if request.peer_ip in transport.peer_ips:
-            log_me(f"WARN: Received add for a node already in cluster")
+            log_me(f"ERROR: Received add for a node already in cluster")
             return raft_pb2.NodeResponse(error="Node already in cluster!")
         transport.peer_ips.append(request.peer_ip)
         log_me(f"added {request.peer_ip}.....new size= {len(transport.peer_ips)}")
@@ -61,6 +64,9 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def RemoveNode(self, request, context):
         stats.add_raft_request("RemoveNode")
         log_me(f"Received a remove node request for ip: {request.peer_ip}")
+        if request.peer_ip == globals.ip_port:
+            log_me(f"ERROR: can't remove myself duh")
+            return raft_pb2.NodeResponse(error="Self-Node remove request!")
         if request.peer_ip not in transport.peer_ips:
             log_me(f"ERROR: Received remove node  {request.peer_ip}. Node not part of cluster")
             return raft_pb2.NodeResponse(error="Node not in cluster!")

@@ -32,6 +32,13 @@ NODE_LOCAL_PORT = {
 }
 LEADER_NAME = "server-1"
 
+def get_follower():
+    for node in NODE_IPS:
+        if node != LEADER_NAME:
+            return node
+
+    # All are leaders(?).
+    return None
 
 def random_requests():
     global REQ_TIMES
@@ -124,13 +131,13 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
     return resp
 
-def send_add_node(peer_ip):
-    for i in range(len(NODE_IPS)):
-        print(f"==localhost:400{i}")
-        channel = grpc.insecure_channel(f"localhost:400{i}")
+def send_add_node(peer_name):
+    for name in NODE_IPS:
+        print(f"contacting {NODE_LOCAL_PORT[name]}")
+        channel = grpc.insecure_channel(NODE_LOCAL_PORT[name])
         stub = raft_pb2_grpc.RaftProtocolStub(channel)
-        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=peer_ip))
-        print(f"Add Node for {peer_ip} sent! Response error:{resp.error}")
+        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[peer_name]))
+        print(f"Add Node for {peer_name} sent! Response error:{resp.error}")
 
 def send_remove_node(peer_name):
     for name in NODE_IPS:
