@@ -65,6 +65,22 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
                                            key=request.key, value=cached_val)
 
+    def MultiGet(self, request, context):
+        stats.add_kv_request("MULTI_GET")
+
+        log_me(f"Servicing Multi Get request")
+
+        if not globals.state == NodeRole.Leader:
+            log_me("Redirecting to leader: " + str(globals.leader_name))
+            return kvstore_pb2.MultiGetResponse(is_redirect=True, redirect_server=globals.leader_name)
+
+        with self.kv_store_lock:
+            key_vector = request.get_vector
+            for k in key_vector:
+                log_me(f"i am getting {k.key}")
+            # cached_val = self.client.get(request.key)
+        return kvstore_pb2.MultiGetResponse(is_redirect=False)
+
 
 def main(port=5440):
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
