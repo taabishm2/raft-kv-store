@@ -252,7 +252,7 @@ class Transport:
 
         if not resp.is_success:
             if resp.term > globals.current_term:
-                return 0, raft_pb2.AEResponse(is_success=False, term=resp.current_term)
+                return 0, raft_pb2.AEResponse(is_success=False, term=resp.term)
             log_me(f"Log mismatch for {peer_ip}, going to index:{index - 1}")
             entries[1:] = entries
             entries[0] = prev_log_entry

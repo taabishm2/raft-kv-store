@@ -30,9 +30,8 @@ def test1():
     print("\n\n\n")
     sleep(20)
 
-    print(f"I think, the current leader is {client.LEADER_NAME}")
-
     client.send_get("Key2")
+    print(f"I think, the current leader is {client.LEADER_NAME}")
     
     print("\n\n\n")
 

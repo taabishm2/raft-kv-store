@@ -104,10 +104,14 @@ def best_effort_put(key, val):
             print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
                 {resp.redirect_server}")
             if resp.is_redirect:
-                LEADER_NAME = resp.redirect_server
-                return send_put(key, val)
+                if LEADER_NAME != resp.redirect_server:
+                    LEADER_NAME = resp.redirect_server
+                    return send_put(key, val)
+                else:
+                    continue
             else:
                 # Put succeeded.
+                LEADER_NAME = node
                 return None
         except Exception as e:
             print(f"{node} is down. Contacting another server")

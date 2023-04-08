@@ -69,7 +69,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                                            key=request.key, value=cached_val)
 
     def MultiGet(self, request, context):
-        stats.add_kv_request("MULTI_GET")
+        stats.add_kv_request(f"MULTI_GET {request}")
 
         log_me(f"Servicing Multi Get request")
 
