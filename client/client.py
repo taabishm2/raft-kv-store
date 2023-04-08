@@ -25,11 +25,13 @@ NODE_IPS = {
 NODE_DOCKER_IPS = {
     "server-1": 'server-1:4000',
     "server-2": 'server-2:4000',
-    "server-3": 'server-3:4000'}
+    "server-3": 'server-3:4000',
+    "server-4": 'server-4:4000'}
 NODE_LOCAL_PORT = {
     "server-1": 'localhost:4000',
     "server-2": 'localhost:4001',
-    "server-3": 'localhost:4002'
+    "server-3": 'localhost:4002',
+    "server-4": 'localhost:4003'
 }
 
 LEADER_NAME = "server-1"
@@ -95,6 +97,7 @@ def best_effort_put(key, val):
         print(f"Contacting {node}")
         try:
             LEADER_IP = NODE_IPS[node]
+            LEADER_NAME = node
             channel = grpc.insecure_channel(LEADER_IP)
             stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
@@ -196,28 +199,24 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-<<<<<<< HEAD
+
     # send_put("Key1", "Val1")
-    send_put("Key43", "Val534")
-    send_get("Key43")
-=======
+    # send_put("Key1", "Val1")
+    # send_get("Key1")
 
-    send_put("Key1", "Val1")
-    send_put("Key1", "Val1")
+    # send_put("Key6", "Val6")
+    # send_get("Key6")
+
+    # # send_add_node("server-4:4000")
+
+    # send_put("Key3", "Val3")
+    # send_get("Key1")
+
+    # send_put("Key2", "Val2")
     send_get("Key1")
->>>>>>> 4b89f87a435deed84786997b635490deceedfb29
-
-    send_put("Key6", "Val6")
-    send_get("Key6")
-
-    # send_add_node("server-4:4000")
-
-    send_put("Key3", "Val3")
-    send_get("Key1")
-
-    send_put("Key2", "Val2")
     send_get("Key2")
 
-    send_remove_node("server-4:4000")
+    # send_remove_node("server-4:4000")
+    # send_get("Key2")
 
     print(f'Completed Client Process!')

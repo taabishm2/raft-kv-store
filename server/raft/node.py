@@ -16,7 +16,9 @@ class RaftNode:
         #         sleep(1)
 
         log_item = LogEntry(globals.current_term, key, value)
+        log_me("Starting append")
         index = log_manager.append(log_item)
+        log_me("Finished append")
 
         t1 = time.time()
         is_success_on_majority = transport.append_entry_to_peers(log_item, index)

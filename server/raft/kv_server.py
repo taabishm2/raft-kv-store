@@ -22,14 +22,13 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
     def __init__(self):
         super().__init__()
         self.kv_store_lock = threading.Lock()
-        print("i'm staring memchahe wish me luckkkkk!!!!")
         self.client = base.Client(('localhost', 11211))
 
         self.sync_kv_store_with_logs()
 
     def sync_kv_store_with_logs(self):
-        for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
-            with self.kv_store_lock:
+        with self.kv_store_lock:
+            for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
                 self.client.set(entry.cmd_key, entry.cmd_val)
                 globals.set_last_applied(globals.commitIndex)
 
@@ -54,27 +53,26 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def Get(self, request, context):
         stats.add_kv_request("GET")
-        log_me(f"Get {request.key}")
+        # log_me(f"Get {request.key}")
 
         if not globals.state == NodeRole.Leader:
-            log_me("Redirecting to leader: " + str(globals.leader_name))
+            # log_me("Redirecting to leader: " + str(globals.leader_name))
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
-        with self.kv_store_lock:
-            cached_val = self.client.get(request.key)
-            return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
+        cached_val = self.client.get(request.key)
+        return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
                                            key=request.key, value=cached_val)
 
 
 def main(port=5440):
-    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
+    grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=1000000))
     kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), grpc_server)
     grpc_server.add_insecure_port(f'[::]:{port}')
 
-    log_me(f"{globals.name} KV-server listening on: {port}")
+    # log_me(f"{globals.name} KV-server listening on: {port}")
     grpc_server.start()
     grpc_server.wait_for_termination()
-    log_me(f"{globals.name} KV-server terminated")
+    # log_me(f"{globals.name} KV-server terminated")
 
 
 if __name__ == '__main__':
