@@ -65,8 +65,8 @@ def send_put_for_val(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     t2 = time()
 
-    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
-    #     {resp.redirect_server}")
+    print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+        {resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
@@ -85,8 +85,8 @@ def send_put(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     t2 = time()
 
-    print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
-        {resp.redirect_server}")
+    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    #     {resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
@@ -105,7 +105,7 @@ def send_get(key):
     t1 = time()
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
     t2 = time()
-    #
+    # #
     print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
          redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
@@ -123,6 +123,20 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     resp = stub.RequestVote(raft_pb2.VoteRequest(term=term, candidate_id=candidate_id, last_log_index=logidx, last_log_term=logterm))
     # print(f"Vote request sent! Response: {resp.term}, {resp.vote_granted}, {resp.error}")
     return resp
+
+
+def kill_node(ip_to_kill, ips_to_send_to):
+    for ip in ips_to_send_to:
+        channel = grpc.insecure_channel(ip)
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=ip_to_kill))
+
+
+def add_node(ip_to_add, ips_to_send_to):
+    for ip in ips_to_send_to:
+        channel = grpc.insecure_channel(ip)
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=ip_to_add))
 
 
 if __name__ == '__main__':
@@ -144,9 +158,12 @@ if __name__ == '__main__':
     #     t.join()
 
     # Send single put and 2 gets (one valid one invalid)
-    send_put("Key1", "Val1")
+    # send_put("Key1", "Val1")
     send_get("Key1")
     send_get("Key2")
+
+    send_put("KeyTabish", "ValTabish")
+
     #send_put("Key43", "Val534")
     # send_get("Key43")
 
