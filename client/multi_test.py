@@ -8,6 +8,8 @@ def test1():
     # After adding the same node back, it should become a follower.
     #
     client.send_put("Key1", "Val1")
+    client.send_put("Key1", "Val1")
+    client.send_mult_get(["Key1"])
 
     print("\n\n\n")
 

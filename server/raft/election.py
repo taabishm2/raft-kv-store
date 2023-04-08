@@ -47,7 +47,7 @@ class Election:
                     log_me(f'[PEER HEARTBEAT RESPONSE] {peer} {response.is_success}')
                 # delta = time.time() - start
                 # time.sleep((globals.HB_TIME - delta) / 1000)
-            log_me(f'♥ > {peer} {response.is_success} 🥹')
+            log_me(f'♥ > {peer} {response.is_success} {response.term} 🥹')
         except Exception as e:
             log_me(f'💔 > {peer} Failed: {str(e)} 🥹')
             # time.sleep(globals.HB_TIME * 1.5 / 1000)
@@ -116,6 +116,7 @@ class Election:
             self.init_heartbeat()
         else:
             # If I am not elected, I will try election after sometime.
+            log_me("Shoot, I am not elected, I am gonna sleep.")
             rand_timeout = random_timeout(globals.LOW_TIMEOUT, globals.HIGH_TIMEOUT)
             time.sleep(rand_timeout)
 

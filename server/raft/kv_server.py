@@ -28,6 +28,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
         self.sync_kv_store_with_logs()
 
     def sync_kv_store_with_logs(self):
+        log_me(f"Syncing kvstore, from {globals.lastApplied} to {globals.commitIndex+1}")
         for entry in log_manager.entries[globals.lastApplied:(globals.commitIndex+1)]:
             with self.kv_store_lock:
                 self.client.set(entry.cmd_key, entry.cmd_val)
@@ -60,6 +61,8 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             log_me("Redirecting to leader: " + str(globals.leader_name))
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
+        # Can be done in a separate thread.
+        self.sync_kv_store_with_logs()
         with self.kv_store_lock:
             cached_val = self.client.get(request.key)
             return kvstore_pb2.GetResponse(key_exists=cached_val is not None,

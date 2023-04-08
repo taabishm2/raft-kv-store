@@ -25,11 +25,13 @@ NODE_IPS = {
 NODE_DOCKER_IPS = {
     "server-1": 'server-1:4000',
     "server-2": 'server-2:4000',
-    "server-3": 'server-3:4000'}
+    "server-3": 'server-3:4000',
+    "server-4": 'server-4:4000'}
 NODE_LOCAL_PORT = {
     "server-1": 'localhost:4000',
     "server-2": 'localhost:4001',
-    "server-3": 'localhost:4002'
+    "server-3": 'localhost:4002',
+    "server-4": 'localhost:4003'
 }
 
 LEADER_NAME = "server-1"
@@ -127,6 +129,27 @@ def send_get(key):
     else:
         return resp
 
+def send_mult_get(keys):
+    global NODE_IPS, LEADER_NAME
+
+    LEADER_IP = NODE_IPS[LEADER_NAME]
+    channel = grpc.insecure_channel(LEADER_IP)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+    req = kvstore_pb2.MultiGetRequest()
+    for key in keys:
+        req.get_vector.append(kvstore_pb2.GetRequest(key=key))
+    
+    # Make multi get request.
+    resp = stub.MultiGet(req)
+    print(f"Multi GET {keys} sent! Response:{resp.get_vector},\
+         redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
+
+    if resp.is_redirect:
+        LEADER_NAME = resp.redirect_server
+        return send_get(key)
+    else:
+        return resp
 
 def send_request_vote(term, candidate_id, logidx, logterm):
     channel = grpc.insecure_channel('localhost:4000')
