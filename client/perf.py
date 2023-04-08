@@ -199,54 +199,108 @@ def single_thread_throughput_leader_killed():
     plt.clf()
 
 def log_recovery_time():
+    # need atleast one log entry
+    client1.send_put("AB", "CD")
     xaxis, yaxis = [], []
     for log_diff in range(10, 1000, 10):
 
         # Since leader might change, re-fetch
         leader_ip = client1.LEADER_NAME
-        g = client1.send_get("K")[1]
+        g = client1.send_get_wo_redirect("K", leader_ip)
         if g.is_redirect:
             leader_ip = g.redirect_server
         ips_logs = {"server-1": "server1", "server-2": "server2", "server-3": "server3"}
-        ips_logs.pop(leader_ip)
-        to_be_killed = ips_logs.keys()[0]
+        to_be_killed = [i for i in ips_logs.keys() if i != leader_ip][0]
         print(f"Leader: {leader_ip}, to be killed: {to_be_killed}")
 
         xaxis.append(log_diff)
         # kill to_be_killed with remove node
-        client1.kill_node(to_be_killed, ips_logs.keys())
+        client1.send_remove_node(to_be_killed)
 
         # Make 'log_diff' appends to leader
-        with ThreadPoolExecutor(max_workers=log_diff - 1) as executor:
-            future_calls = {executor.submit(client1.send_put, "KEY", "VAL") for _ in range(log_diff - 1)}
+        with ThreadPoolExecutor(max_workers=log_diff) as executor:
+            future_calls = {executor.submit(client1.send_put, "KEY", "VAL") for _ in range(log_diff)}
             for completed_task in as_completed(future_calls):
                 pass
-        # Add one final key which will be checked later
-        last_key = "LASTKEY" + str(log_diff)
-        client1.send_put(last_key, last_key)
 
         leader_shelve = shelve.open(f"../logs/logcache/server{leader_ip[-1]}/stable_log")
         leader_log_size = leader_shelve["SHELF_SIZE"]
 
+        # add killed node back
+        dead_node_shelve = shelve.open(f"../logs/logcache/server{to_be_killed[-1]}/stable_log")
+        init_log_size = dead_node_shelve["SHELF_SIZE"]
+        dead_node_shelve.close()
+
+        add_thread = threading.Thread(target=client1.send_add_node, args=(to_be_killed,))
+        add_thread.start()
+
         # Re-add dead node and wait till it sees last_key
+        t1 = time.time()
         while True:
-            t1 = time.time()
-            # add killed node back
-            add_thread = threading.Thread(target=client1.add_node, args=(to_be_killed, ips_logs.keys()))
             # directly open shelve log of killed node
+            to = time.time()
             dead_node_shelve = shelve.open(f"../logs/logcache/server{to_be_killed[-1]}/stable_log")
             log_size = dead_node_shelve["SHELF_SIZE"]
+            dead_node_shelve.close()
+            tc = time.time()
 
             if log_size >= leader_log_size:
                 yaxis.append(time.time() - t1)
+                print(f"took {yaxis[-1]} secs for [{init_log_size}] -> [{log_size}/{leader_log_size}] entries")
                 break
 
-        plt.plot(xaxis, yaxis)
-        plt.xlabel("Count of entries missing in recovered node")
-        plt.ylabel("Time taken for log to become up-to-date")
-        plt.title(f'Dead-node log recovery time for {NUM_SERVERS} servers')
-        plt.savefig(f'graphs/{NUM_SERVERS}-server-dead-node-recoverytime.png')
-        plt.clf()
+    plt.plot(xaxis, yaxis)
+    plt.xlabel("Count of entries missing in recovered node")
+    plt.ylabel("Time taken for log to become up-to-date")
+    plt.title(f'Dead-node log recovery time for {NUM_SERVERS} servers')
+    plt.savefig(f'graphs/{NUM_SERVERS}-server-dead-node-recoverytime.png')
+    plt.clf()
+
+
+def some_workload():
+    input("Make sure COLLECT_STATS = True in stats.py")
+    t1 = time.time()
+    while time.time() - t1 < 5:
+        choice = random.randint(0, 2)
+        if choice == 0:
+            threads = random.randint(1, 5)
+            print(f"{threads} PUT threads")
+            with ThreadPoolExecutor(max_workers=threads) as executor:
+                future_calls = {executor.submit(client1.send_put, "KEY", "VAL") for _ in range(threads)}
+                for completed_task in as_completed(future_calls):
+                    pass
+        elif choice == 1:
+            threads = random.randint(1, 5)
+            print(f"{threads} GET threads")
+            with ThreadPoolExecutor(max_workers=threads) as executor:
+                future_calls = {executor.submit(client1.send_get, "KEY") for _ in range(threads)}
+                for completed_task in as_completed(future_calls):
+                    pass
+        else:
+            print(f"Sleep for a sec")
+            time.sleep(1)
+
+
+def plot_internal_server_stats():
+    # run some workload for some time first
+    some_workload()
+    # assumes no leadership change occurs
+
+    # trigger flush of server stats
+    client1.send_get("FLUSH_CALL_STATS")
+
+    db_file = shelve.open("../server/raft/server-rpc-stats")
+
+    commit_latency = db_file["COMMIT_LAT"]
+    kv_request_list = db_file["KV_REQS"]
+    raft_request_list = db_file["RAFT_REQS"]
+
+    print(commit_latency)
+    print(kv_request_list)
+    print(raft_request_list)
+
+    # TODO: plot
+
 
 # def smoothen(data, window_size=3):
 #     max_val, min_val = window_size
@@ -255,9 +309,11 @@ def log_recovery_time():
 
 
 if __name__ == "__main__":
-    input("[REQUIRED] Run `chmod -R a+rw /local-path-of-logs-directory-here`")
+    input("[REQUIRED] Run `sudo chmod -R a+rw logs/` and clear logs first [Press enter after done]")
     # perf_get_rpc_latency()
     # perf_put_rpc_latency()
     # perf_degradation()
     # single_thread_throughput()
-    single_thread_throughput_leader_killed()
+    # single_thread_throughput_leader_killed()
+    # log_recovery_time()
+    plot_internal_server_stats()

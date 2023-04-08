@@ -94,6 +94,11 @@ def send_put(key, val):
 
     return t2 - t1
 
+def send_get_wo_redirect(key, name):
+    LEADER_IP = NODE_IPS[name]
+    channel = grpc.insecure_channel(LEADER_IP)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+    return stub.Get(kvstore_pb2.GetRequest(key=key))
 
 def send_get(key):
     global NODE_IPS, LEADER_NAME
@@ -125,11 +130,47 @@ def send_request_vote(term, candidate_id, logidx, logterm):
     return resp
 
 
+NODE_IPS = {
+    "server-1": 'localhost:5440',
+    "server-2": 'localhost:5441',
+    "server-3": 'localhost:5442',
+    "server-4": 'localhost:5443'}
+NODE_DOCKER_IPS = {
+    "server-1": 'server-1:4000',
+    "server-2": 'server-2:4000',
+    "server-3": 'server-3:4000',
+    "server-4": 'server-4:4000'}
+NODE_LOCAL_PORT = {
+    "server-1": 'localhost:4000',
+    "server-2": 'localhost:4001',
+    "server-3": 'localhost:4002',
+    "server-4": 'localhost:4003'
+}
+
+def send_add_node(peer_name):
+    for name in NODE_IPS:
+        #print(f"contacting {NODE_LOCAL_PORT[name]}")
+        channel = grpc.insecure_channel(NODE_LOCAL_PORT[name])
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.AddNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[peer_name]))
+        #print(f"Add Node for {peer_name} sent! Response error:{resp.error}")
+
+def send_remove_node(peer_name):
+    for name in NODE_IPS:
+        if name == peer_name:
+            continue  # skip remove node message for current node.
+        #print(f"Sending remove rpc > {name}")
+        channel = grpc.insecure_channel(NODE_LOCAL_PORT[name])
+        stub = raft_pb2_grpc.RaftProtocolStub(channel)
+        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[peer_name]))
+        #print(f"Remove Node for {peer_name} sent! Response error:{resp.error}")
+
+
 def kill_node(ip_to_kill, ips_to_send_to):
     for ip in ips_to_send_to:
-        channel = grpc.insecure_channel(ip)
+        channel = grpc.insecure_channel(NODE_IPS[ip])
         stub = raft_pb2_grpc.RaftProtocolStub(channel)
-        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=ip_to_kill))
+        resp = stub.RemoveNode(raft_pb2.NodeRequest(peer_ip=NODE_DOCKER_IPS[ip_to_kill]))
 
 
 def add_node(ip_to_add, ips_to_send_to):
@@ -159,7 +200,7 @@ if __name__ == '__main__':
 
     # Send single put and 2 gets (one valid one invalid)
     # send_put("Key1", "Val1")
-    send_get("Key1")
+    send_get("KeyTabish")
     send_get("Key2")
 
     send_put("KeyTabish", "ValTabish")

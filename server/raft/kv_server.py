@@ -59,6 +59,9 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
             # log_me("Redirecting to leader: " + str(globals.leader_name))
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
+        if request.key == "FLUSH_CALL_STATS":
+            stats.flush()
+
         with self.kv_store_lock:
             cached_val = self.client.get(request.key)
             return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
