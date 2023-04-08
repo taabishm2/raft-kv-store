@@ -190,7 +190,7 @@ class Transport:
                 is_heart_beat=True)
             response = self.peer_stubs[peer].AppendEntries(request)
         else:
-            success, response = self.push_append_entry(peer, last_idx, [log_manager.get_log_at_index(last_idx)], True)
+            success, response = self.push_append_entry(peer, last_idx, [log_manager.get_log_at_index(last_idx)], True, globals.current_term)
             # Heart beat doesn't update commitIndex of the leader.
 
         return response
@@ -201,7 +201,7 @@ class Transport:
         # Use thread pool to submit rpcs to peers.
         num_peers = len(self.peer_stubs)
         with ThreadPoolExecutor(max_workers=num_peers) as executor:
-            future_rpcs = {executor.submit(self.push_append_entry, peer, index, [entry], False) for peer in transport.peer_ips}
+            future_rpcs = {executor.submit(self.push_append_entry, peer, index, [entry], False, globals.current_term) for peer in transport.peer_ips}
             for completed_task in as_completed(future_rpcs):
                 try:
                     is_complete, _ = completed_task.result()
@@ -217,7 +217,7 @@ class Transport:
         # excluding the leader node).
         return success_count >= num_peers // 2
 
-    def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False):
+    def push_append_entry(self, peer_ip, index, entries: list[LogEntry], is_heartbeat=False, curr_term=None):
         if not is_heartbeat: log_me(f"Sending AppendEntry to {peer_ip} with index:{index}")
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
@@ -229,7 +229,7 @@ class Transport:
 
         # Prepare appendRPC request.
         request = raft_pb2.AERequest(
-            term=globals.current_term,
+            term=curr_term,
             leader_id=globals.name,
             start_index=index,
             prev_log_index=prev_index,
@@ -250,7 +250,7 @@ class Transport:
             entries[1:] = entries
             entries[0] = prev_log_entry
             # Retry with updated entries list.
-            return self.push_append_entry(peer_ip, index - 1, entries, is_heartbeat)
+            return self.push_append_entry(peer_ip, index - 1, entries, is_heartbeat, curr_term)
 
         return 1, resp
 
