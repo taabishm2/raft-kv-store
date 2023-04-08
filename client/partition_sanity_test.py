@@ -40,10 +40,10 @@ def test2():
     # 
     # Remove a follower node. Observe that PUT, GET succeeds.
     # Follower should keep triggering election with no vain.
-    # After adding the same node back, it should become the leader.
+    # After adding the same node back, it should become a follower.
     # 
-    client.send_put("Key1", "Val1")
-    client.send_get("Key1")
+    client.send_put("Key3", "Val3")
+    client.send_get("Key3")
 
     print(f"I think, the current leader is {client.LEADER_NAME}")
     follower = client.get_follower()
@@ -74,5 +74,7 @@ def test2():
 
 
 if __name__ == '__main__':
-    test1()
-    # test2()
+    # test1()
+
+    print("########### TEST 2 ######################\n\n")
+    test2()
