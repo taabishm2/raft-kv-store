@@ -53,13 +53,14 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
     def Get(self, request, context):
         stats.add_kv_request("GET")
-        # log_me(f"Get {request.key}")
+        log_me(f"Get {request.key}")
 
         if not globals.state == NodeRole.Leader:
             # log_me("Redirecting to leader: " + str(globals.leader_name))
             return kvstore_pb2.GetResponse(key_exists=False, is_redirect=True, redirect_server=globals.leader_name)
 
         cached_val = self.client.get(request.key)
+        log_me(f"I am here")
         return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
                                            key=request.key, value=cached_val)
 
