@@ -1,11 +1,12 @@
 import time
 from threading import Lock
+import csv
 import shelve
 
 
 class Stats:
 
-    CAPTURE_STATS = True
+    CAPTURE_STATS = False
 
     def __init__(self):
         self.lock = Lock()
@@ -29,8 +30,10 @@ class Stats:
         with self.lock:
             self.raft_request_list.append((time.time(), request_name))
 
-    def flush(self):
-        s = shelve.open("server-rpc-stats")
+    def flush(self):        
+        s = shelve.open("/raft-kv-store/logs/logcache/server-rpc-stats")
+        print("KYYVVVS")
+        print(self.kv_request_list)
         s["COMMIT_LAT"] = self.commit_latency
         s["KV_REQS"] = self.kv_request_list
         s["RAFT_REQS"] = self.raft_request_list

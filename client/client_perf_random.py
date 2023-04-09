@@ -12,7 +12,7 @@ import kvstore_pb2_grpc
 import raft_pb2
 import raft_pb2_grpc
 from threading import Lock, Thread
-from client1 import *
+from client.perf_client import *
 
 # Globals
 THREAD_COUNT = 5

@@ -65,8 +65,8 @@ def send_put_for_val(key, val):
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
     t2 = time()
 
-    print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
-        {resp.redirect_server}")
+    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    #     {resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
@@ -111,8 +111,8 @@ def send_get(key):
     resp = stub.Get(kvstore_pb2.GetRequest(key=key))
     t2 = time()
     # #
-    print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
-         redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
+    # print(f"GET {key} sent! Response:{resp.key_exists}, key:{resp.key}, val:{resp.value},\
+    #      redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
@@ -133,19 +133,15 @@ def send_request_vote(term, candidate_id, logidx, logterm):
 NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
-    "server-3": 'localhost:5442',
-    "server-4": 'localhost:5443'}
+    "server-3": 'localhost:5442'}
 NODE_DOCKER_IPS = {
     "server-1": 'server-1:4000',
     "server-2": 'server-2:4000',
-    "server-3": 'server-3:4000',
-    "server-4": 'server-4:4000'}
+    "server-3": 'server-3:4000'}
 NODE_LOCAL_PORT = {
     "server-1": 'localhost:4000',
     "server-2": 'localhost:4001',
-    "server-3": 'localhost:4002',
-    "server-4": 'localhost:4003'
-}
+    "server-3": 'localhost:4002'}
 
 def send_add_node(peer_name):
     for name in NODE_IPS:
