@@ -127,18 +127,19 @@ def plot_get_latency():
     with open(f'data/3-server-GET-parallel-median-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
-    plt.plot(x, smoothen(mid, 11, 4), label="3 servers")
+    plt.plot(x, smoothen(mid, 11, 2), label="3 servers")
     
     x, low, mid, high = [], [], [], []
     with open(f'data/5-server-GET-parallel-median-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
 
-    plt.plot(x, smoothen(mid, 11, 4), label="5 servers", color='red')
+    plt.plot(x, smoothen(mid, 11, 2), label="5 servers", color='red')
     
     plt.title("Median latency vs concurrent GET request count")
     plt.xlabel("Count of concurrent requests")
     plt.ylabel("Observed latency (sec)")
     plt.legend()
+    plt.ylim(0, 0.06)
     plt.savefig(f'graphs/GET-parallel-latency.png')
     plt.clf() 
 
@@ -664,7 +665,7 @@ def plot_log_recovery_time():
     plt.clf() 
 
 
-WORKLOAD_DURATION = 10
+WORKLOAD_DURATION = 200
 def _some_workload():
     t1 = time.time()
     while time.time() - t1 < WORKLOAD_DURATION:
@@ -723,7 +724,8 @@ def plot_internal_latency():
     with open(f'data/5-server-stats-commit-latency.pickle', 'rb') as f:
         data2 = [i[2] for i in pickle.load(f)]
     
-    # print(data1, data2)
+    print(data1[:10])
+    print(data2[:10])
     data = [data1, data2]
     labels = ['3 servers', '5 servers']
     plt.boxplot(data, labels=labels)
@@ -850,7 +852,7 @@ if __name__ == "__main__":
     # collect_trpt_with_varying_livenodes()
     
     # plot_get_latency_3_server()
-    # plot_get_latency()
+    plot_get_latency()
     # plot_get_throughput()
     # plot_put_throughput()
     # plot_put_latency_3_server()
@@ -862,8 +864,8 @@ if __name__ == "__main__":
     # plot_get_degrade_lat()
     # plot_put_degrade_throughput()
     # plot_put_singleT_throughput()
-    plot_put_singleT_leader_killed()
+    # plot_put_singleT_leader_killed()
     
     # plot_log_recovery_time()
-    plot_internal_latency()
-    plot_internal_call_distribution()
+    # plot_internal_latency()
+    # plot_internal_call_distribution()
