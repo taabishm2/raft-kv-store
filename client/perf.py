@@ -558,20 +558,21 @@ def plot_put_singleT_leader_killed():
     with open(f'data/3-server-PUT-availability-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
-    plt.subplot()
-    plt.plot(x, mid, label="3 servers")
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    ax1.plot(x, mid, label='3 servers')
+    ax1.legend()
     
     x, y = [], []
     with open(f'data/5-server-PUT-availability-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
         
-    plt.subplot()
-    plt.plot(x, mid, label="5 servers")
+    ax2.plot(x, mid, label='5 servers')
+    ax2.legend()
     
-    plt.title(f"System Availability on leader crash")
-    plt.xlabel("Time elapsed (sec)")
-    plt.ylabel("Observed throughput (req/s)")
-    plt.legend()
+    plt.suptitle(f"System Availability on leader crash")
+    # plt.xlabel("Time elapsed (sec)")
+    # plt.ylabel("Observed throughput (req/s)")
+    # plt.legend()
     plt.savefig(f'graphs/PUT-singleT-leader-killed.png')
     plt.clf() 
 
@@ -663,7 +664,7 @@ def plot_log_recovery_time():
     plt.clf() 
 
 
-WORKLOAD_DURATION = 300
+WORKLOAD_DURATION = 10
 def _some_workload():
     t1 = time.time()
     while time.time() - t1 < WORKLOAD_DURATION:
@@ -716,13 +717,13 @@ def collect_internal_server_stats():
 def plot_internal_latency():
     data1 = []
     with open(f'data/3-server-stats-commit-latency.pickle', 'rb') as f:
-        data1 = pickle.load(f)
+        data1 = [i[2] for i in pickle.load(f)]
     
     data2 = []
     with open(f'data/5-server-stats-commit-latency.pickle', 'rb') as f:
-        data2 = pickle.load(f)
+        data2 = [i[2] for i in pickle.load(f)]
     
-    print(data1, data2)
+    # print(data1, data2)
     data = [data1, data2]
     labels = ['3 servers', '5 servers']
     plt.boxplot(data, labels=labels)
@@ -861,8 +862,8 @@ if __name__ == "__main__":
     # plot_get_degrade_lat()
     # plot_put_degrade_throughput()
     # plot_put_singleT_throughput()
-    # plot_put_singleT_leader_killed()
+    plot_put_singleT_leader_killed()
     
-    plot_log_recovery_time()
-    # plot_internal_latency()
-    # plot_internal_call_distribution()
+    # plot_log_recovery_time()
+    plot_internal_latency()
+    plot_internal_call_distribution()
