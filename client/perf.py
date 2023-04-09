@@ -14,7 +14,7 @@ import pickle
 import numpy as np
 from math import factorial
 
-NUM_SERVERS = 3
+NUM_SERVERS = 5
 
 
 def restart_cluster(remove_logs=True):
@@ -127,14 +127,13 @@ def plot_get_latency():
     with open(f'data/3-server-GET-parallel-median-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
-    plt.plot(x, mid, label="3 servers")
+    plt.plot(x, smoothen(mid, 11, 4), label="3 servers")
     
     x, low, mid, high = [], [], [], []
     with open(f'data/5-server-GET-parallel-median-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
 
-    plt.figure(dpi=200)
-    plt.plot(x, mid, label="5 servers")
+    plt.plot(x, smoothen(mid, 11, 4), label="5 servers", color='red')
     
     plt.title("Median latency vs concurrent GET request count")
     plt.xlabel("Count of concurrent requests")
@@ -148,16 +147,15 @@ def plot_get_throughput():
     fl5 = f'data/5-server-GET-parallel-throughputs.pickle'
     
     x, y = [], []
-    with open(f"data/{fl3}", 'rb') as f:
+    with open(f"{fl3}", 'rb') as f:
         x, y = pickle.load(f)
     plt.figure(dpi=200)
-    plt.plot(x, y, label="3 servers")
+    plt.plot(x, smoothen_old(list(y)), label="3 servers")
     
     x, y = [], []
-    with open(f"data/{fl5}", 'rb') as f:
+    with open(f"{fl5}", 'rb') as f:
         x, y = pickle.load(f)
-    plt.figure(dpi=200)
-    plt.plot(x, y, label="5 servers")
+    plt.plot(x, smoothen_old(list(y)), label="5 servers", color="red")
     
     plt.title("Throughput vs concurrent GET request count")
     plt.xlabel("Count of concurrent requests")
@@ -208,15 +206,15 @@ def plot_put_throughput():
     fl5 = f'data/5-server-PUT-parallel-throughputs.pickle'
     
     x, y = [], []
-    with open(f"data/{fl3}", 'rb') as f:
+    with open(f"{fl3}", 'rb') as f:
         x, y = pickle.load(f)
     plt.figure(dpi=200)
     plt.plot(x, y, label="3 servers")
     
     x, y = [], []
-    with open(f"data/{fl5}", 'rb') as f:
+    with open(f"{fl5}", 'rb') as f:
         x, y = pickle.load(f)
-    plt.figure(dpi=200)
+
     plt.plot(x, y, label="5 servers")
     
     plt.title("Throughput vs concurrent PUT request count")
@@ -259,7 +257,6 @@ def plot_put_latency():
     with open(f'data/5-server-PUT-parallel-median-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
 
-    plt.figure(dpi=200)
     plt.plot(x, mid, label="5 servers")
     
     plt.title("Median latency vs concurrent PUT request count")
@@ -310,15 +307,15 @@ def plot_put_throughput_nr():
     fl5 = f'data/5-server-PUT-parallel-throughputs_no_restart.pickle'
     
     x, y = [], []
-    with open(f"data/{fl3}", 'rb') as f:
+    with open(f"{fl3}", 'rb') as f:
         x, y = pickle.load(f)
     plt.figure(dpi=200)
     plt.plot(x, y, label="3 servers")
     
     x, y = [], []
-    with open(f"data/{fl5}", 'rb') as f:
+    with open(f"{fl5}", 'rb') as f:
         x, y = pickle.load(f)
-    plt.figure(dpi=200)
+
     plt.plot(x, y, label="5 servers")
     
     plt.title("Throughput vs concurrent PUT request count (log retained)")
@@ -361,7 +358,6 @@ def plot_put_latency_nr():
     with open(f'data/5-server-PUT-parallel-median-latency_no_restart.pickle', 'rb') as f:
         x, mid = pickle.load(f)
 
-    plt.figure(dpi=200)
     plt.plot(x, mid, label="5 servers")
     
     plt.title("Median latency vs concurrent PUT request count (log retained)")
@@ -414,13 +410,12 @@ def plot_put_degrade_lat():
     with open(f'data/3-server-PUT-degrade-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
-    plt.plot(x, mid, label="3 servers")
+    plt.plot(x, smoothen_old(mid), label="3 servers")
     
     x, y = [], []
     with open(f'data/5-server-PUT-degrade-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
-    plt.figure(dpi=200)
-    plt.plot(x, mid, label="5 servers")
+    plt.plot(x, smoothen_old(mid), label="5 servers")
     
     plt.title("PUT Latency vs persistent log size")
     plt.xlabel("Count of entries in log")
@@ -439,7 +434,6 @@ def plot_get_degrade_lat():
     x, y = [], []
     with open(f'data/5-server-GET-degrade-latency.pickle', 'rb') as f:
         x, mid = pickle.load(f)
-    plt.figure(dpi=200)
     plt.plot(x, mid, label="5 servers")
     
     plt.title("GET Latency vs persistent log size")
@@ -459,7 +453,6 @@ def plot_put_degrade_throughput():
     x, y = [], []
     with open(f'data/5-server-PUT-degrade-throughputs.pickle', 'rb') as f:
         x, mid = pickle.load(f)
-    plt.figure(dpi=200)
     plt.plot(x, mid, label="5 servers")
     
     plt.title(f"Throughput of 100 PUTs vs persistent log size")
@@ -496,18 +489,18 @@ def plot_put_singleT_throughput():
     with open(f'data/3-server-PUT-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
-    plt.plot(x, mid, label="3 servers")
+    plt.plot(x[:-1], mid[:-1], label="3 servers")
     
     x, y = [], []
     with open(f'data/5-server-PUT-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
-    plt.figure(dpi=200)
-    plt.plot(x, mid, label="5 servers")
+    plt.plot(x[:-1], mid[:-1], label="5 servers")
     
     plt.title(f"Throughput of single threaded PUTs vs time")
     plt.xlabel("Time elapsed (sec)")
     plt.ylabel("Observed throughput (req/s)")
     plt.legend()
+    plt.ylim(0, 60)
     plt.savefig(f'graphs/PUT-singleT-throughput.png')
     plt.clf() 
 
@@ -565,12 +558,14 @@ def plot_put_singleT_leader_killed():
     with open(f'data/3-server-PUT-availability-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
     plt.figure(dpi=200)
+    plt.subplot()
     plt.plot(x, mid, label="3 servers")
     
     x, y = [], []
     with open(f'data/5-server-PUT-availability-singlethread-throughput.pickle', 'rb') as f:
         x, mid = pickle.load(f)
-    plt.figure(dpi=200)
+        
+    plt.subplot()
     plt.plot(x, mid, label="5 servers")
     
     plt.title(f"System Availability on leader crash")
@@ -727,6 +722,7 @@ def plot_internal_latency():
     with open(f'data/5-server-stats-commit-latency.pickle', 'rb') as f:
         data2 = pickle.load(f)
     
+    print(data1, data2)
     data = [data1, data2]
     labels = ['3 servers', '5 servers']
     plt.boxplot(data, labels=labels)
@@ -741,13 +737,16 @@ def plot_internal_latency():
 def plot_internal_call_distribution():
     gets, puts = 0, 0
     with open(f'data/3-server-stats-kv-requests.pickle', 'rb') as f:
-        gets = len([i for i in pickle.load(f) if i[1]=="GET"])
-        puts = len([i for i in pickle.load(f) if i[1]=="PUT"])
+        v = pickle.load(f)
+        gets = len([i for i in v if i[1]=="GET"])
+        puts = len([i for i in v if i[1]=="PUT"])
     
     hbs = 0
     with open(f'data/3-server-stats-raft-requests.pickle', 'rb') as f:
         hbs = len([i for i in pickle.load(f) if i[1]=="Heartbeat"])
         
+        
+    print(gets, puts, hbs)
     values = [gets, puts, hbs]
     labels = ["GET", "PUT", "Heartbeat"]
     plt.pie(values, labels=labels, autopct='%1.1f%%')
@@ -820,15 +819,15 @@ def smoothen(y, window_size, order, deriv=0, rate=1):
 if __name__ == "__main__":
     # restart_cluster()
     # collect_get_lat_thrp()
-    # plot_get_latency_3_server()
+    # # plot_get_latency_3_server()
     
     # restart_cluster()
     # collect_put_lat_thrp()
-    # plot_put_latency_3_server()
+    # # plot_put_latency_3_server()
     
     # restart_cluster()
     # collect_put_lat_thrp_nr()
-    # plot_put_latency_3_server_nr()
+    # # plot_put_latency_3_server_nr()
     
     # restart_cluster()
     # collect_perf_degradation()
@@ -842,9 +841,28 @@ if __name__ == "__main__":
     # restart_cluster()
     # collect_log_recovery_time()
     
-    restart_cluster()
-    collect_internal_server_stats()
+    # restart_cluster()
+    # collect_internal_server_stats()
     
     # FOR 5 server only
     # restart_cluster()
     # collect_trpt_with_varying_livenodes()
+    
+    # plot_get_latency_3_server()
+    # plot_get_latency()
+    # plot_get_throughput()
+    # plot_put_throughput()
+    # plot_put_latency_3_server()
+    # plot_put_latency()
+    # plot_put_throughput_nr()
+    # plot_put_latency_3_server_nr()
+    # plot_put_latency_nr()
+    # plot_put_degrade_lat()
+    # plot_get_degrade_lat()
+    # plot_put_degrade_throughput()
+    # plot_put_singleT_throughput()
+    # plot_put_singleT_leader_killed()
+    
+    # plot_log_recovery_time()
+    # plot_internal_latency()
+    plot_internal_call_distribution()

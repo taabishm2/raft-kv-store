@@ -20,7 +20,10 @@ REQ_TIMES = []
 NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
-    "server-3": 'localhost:5442'}
+    "server-3": 'localhost:5442',
+    "server-4": 'localhost:5443',
+    "server-5": 'localhost:5444',
+    }
 LEADER_NAME = "server-3"
 
 
@@ -133,15 +136,24 @@ def send_request_vote(term, candidate_id, logidx, logterm):
 NODE_IPS = {
     "server-1": 'localhost:5440',
     "server-2": 'localhost:5441',
-    "server-3": 'localhost:5442'}
+    "server-3": 'localhost:5442',
+    "server-4": 'localhost:5443',
+    "server-5": 'localhost:5444',
+    }
 NODE_DOCKER_IPS = {
     "server-1": 'server-1:4000',
     "server-2": 'server-2:4000',
-    "server-3": 'server-3:4000'}
+    "server-3": 'server-3:4000',
+    "server-4": 'server-4:4000',
+    "server-5": 'server-5:4000',
+    }
 NODE_LOCAL_PORT = {
     "server-1": 'localhost:4000',
     "server-2": 'localhost:4001',
-    "server-3": 'localhost:4002'}
+    "server-3": 'localhost:4002',
+    "server-4": 'localhost:4003',
+    "server-5": 'localhost:4004',
+    }
 
 def send_add_node(peer_name):
     for name in NODE_IPS:
