@@ -7,6 +7,8 @@ def test1():
     # Remove leader node. Observe that PUT fails because of no-consensus.
     # After adding the same node back, it should become a follower.
     # 
+    print("======================================================")
+
     client.send_put("Key1", "Val1")
     client.send_get("Key1")
 
@@ -32,6 +34,8 @@ def test1():
 
     client.send_get("Key2")
     print(f"I think, the current leader is {client.LEADER_NAME}")
+
+    print("Leader in minority parition test done!")
     
     print("\n\n\n")
 
@@ -42,6 +46,8 @@ def test2():
     # Follower should keep triggering election with no vain.
     # After adding the same node back, it should become a follower.
     # 
+    print("======================================================")
+
     client.send_put("Key3", "Val3")
     client.send_get("Key3")
 
@@ -72,9 +78,11 @@ def test2():
     print(f"I think, the current leader is {client.LEADER_NAME}")
     print("\n\n\n")
 
+    print("Leader in majority parition test done!")
+
+    print("======================================================")
+
 
 if __name__ == '__main__':
-    # test1()
-
-    print("########### TEST 2 ######################\n\n")
+    test1()
     test2()
