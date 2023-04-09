@@ -207,6 +207,8 @@ class Transport:
                     is_complete, _ = completed_task.result()
                     log_me(f"Response received {completed_task.result()}")
                     success_count += is_complete
+                    if success_count >= num_peers // 2:
+                        return True
                 except Exception as exc:
                     # Unresponsive clients, Internal errors...
                     log_me(f'generated an exception: {exc}')
