@@ -205,8 +205,8 @@ class Transport:
             for completed_task in as_completed(future_rpcs):
                 try:
                     is_complete, _ = completed_task.result()
-                    log_me(f"Response received {completed_task.result()}")
                     success_count += is_complete
+                    log_me(f"Response received {completed_task.result()} {success_count} {num_peers//2}")
                     if success_count >= num_peers // 2:
                         return True
                 except Exception as exc:
@@ -245,7 +245,7 @@ class Transport:
             request.entries.append(log_entry_grpc)
 
         # Call appendEntries RPC with 5 second timeout.
-        resp = self.peer_stubs[peer_ip].AppendEntries(request, timeout=5)
+        resp = self.peer_stubs[peer_ip].AppendEntries(request, timeout=globals.HB_TIME/1000.0)
 
         if not resp.is_success:
             log_me(f"Log mismatch for {peer_ip}, going to index:{index - 1}")
