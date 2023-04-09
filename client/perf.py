@@ -649,15 +649,15 @@ def plot_log_recovery_time():
     plt.figure(dpi=200)
     plt.plot(x, mid, label="3 servers")
     
-    x, y = [], []
-    with open(f'data/5-server-dead-node-recoverytime.pickle', 'rb') as f:
-        x, mid = pickle.load(f)
-    plt.figure(dpi=200)
-    plt.plot(x, mid, label="5 servers")
+    # x, y = [], []
+    # with open(f'data/5-server-dead-node-recoverytime.pickle', 'rb') as f:
+    #     x, mid = pickle.load(f)
+    # plt.figure(dpi=200)
+    # plt.plot(x, mid, label="5 servers")
     
     plt.title(f"Log recovery time for out-of-date nodes")
     plt.xlabel("Count of entries missing in out-of-date node")
-    plt.ylabel("Time to fully recover log (s)")
+    plt.ylabel("Time to fully recover log (sec)")
     plt.legend()
     plt.savefig(f'graphs/log-recovery.png')
     plt.clf() 
@@ -863,6 +863,6 @@ if __name__ == "__main__":
     # plot_put_singleT_throughput()
     # plot_put_singleT_leader_killed()
     
-    # plot_log_recovery_time()
+    plot_log_recovery_time()
     # plot_internal_latency()
-    plot_internal_call_distribution()
+    # plot_internal_call_distribution()
