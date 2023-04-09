@@ -4,7 +4,7 @@ service KVStore {
     rpc Put(PutRequest) returns (PutResponse) {}
     rpc MultiPut(MultiPutRequest) returns (PutResponse) {}
     rpc Get(GetRequest) returns (GetResponse) {}
-    rpc MultiGet(GetRequest) returns (MultiGetResponse) {}
+    rpc MultiGet(MultiGetRequest) returns (MultiGetResponse) {}
 }
 
 message PutRequest {

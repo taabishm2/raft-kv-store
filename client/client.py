@@ -90,6 +90,26 @@ def send_put(key, val):
     else:
         return resp
 
+def send_multi_put(keys, vals):
+    global NODE_IPS, LEADER_NAME
+
+    LEADER_IP = NODE_IPS[LEADER_NAME]
+    channel = grpc.insecure_channel(LEADER_IP)
+    stub = kvstore_pb2_grpc.KVStoreStub(channel)
+
+    req = kvstore_pb2.MultiPutRequest()
+    for ii, _ in enumerate(keys):
+        req.put_vector.append(kvstore_pb2.PutRequest(key=keys[ii], value=vals[ii]))
+
+    resp = stub.MultiPut(req)
+    print(f"redirect:{resp.is_redirect}, \
+        {resp.redirect_server}")
+    if resp.is_redirect:
+        LEADER_NAME = resp.redirect_server
+        return send_multi_put(keys, vals)
+    else:
+        return resp
+
 def best_effort_put(key, val):
     global NODE_IPS, LEADER_NAME
 
@@ -146,12 +166,10 @@ def send_mult_get(keys):
     
     # Make multi get request.
     resp = stub.MultiGet(req)
-    print(f"Multi GET {keys} sent! Response:{resp.get_vector},\
-         redirect:{resp.is_redirect}, leader:{resp.redirect_server}")
 
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
-        return send_get(key)
+        return send_mult_get(keys)
     else:
         return resp
 
