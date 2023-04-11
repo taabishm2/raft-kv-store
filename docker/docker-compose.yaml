@@ -43,6 +43,21 @@ services:
             - IS_UNRESPONSIVE=FALSE
             - PEER_IPS=server-1:4000,server-2:4000
             # - MEMCACHED_HOST=memcached
+    
+    # server-4:
+    #     image: kvstore
+    #     volumes:
+    #         - "../server/server.sh:/start.sh"
+    #         - "../logs/logcache/server4:/raft-kv-store/logs/logcache"
+    #     ports:
+    #         - "127.0.0.1:5443:5440"
+    #         - "127.0.0.1:4003:4000"
+    #     environment:
+    #         - NAME=server-4
+    #         - IS_LEADER=FALSE
+    #         - IS_UNRESPONSIVE=FALSE
+    #         - PEER_IPS=server-1:4000,server-2:4000,server-3:4000,server-5:4000
+    #         # - MEMCACHED_HOST=memcached
 
     # memcached:
     #     image: memcached:alpine
@@ -74,3 +89,17 @@ services:
 #            - server-1
 #            - server-2
 #            - server-3
+    # server-5:
+    #     image: kvstore
+    #     volumes:
+    #         - "../server/server.sh:/start.sh"
+    #         - "../logs/logcache/server5:/raft-kv-store/logs/logcache"
+    #     ports:
+    #         - "127.0.0.1:5444:5440"
+    #         - "127.0.0.1:4004:4000"
+    #     environment:
+    #         - NAME=server-5
+    #         - IS_LEADER=FALSE
+    #         - IS_UNRESPONSIVE=FALSE
+    #         - PEER_IPS=server-1:4000,server-2:4000,server-3:4000,server-4:4000
+    #         # - MEMCACHED_HOST=memcached

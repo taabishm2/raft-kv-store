@@ -96,6 +96,9 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
         # Can be done in a separate thread.
         self.sync_kv_store_with_logs()
+        if request.key == "FLUSH_CALL_STATS":
+            stats.flush()
+
         with self.kv_store_lock:
             cached_val = self.client.get(request.key)
             return kvstore_pb2.GetResponse(key_exists=cached_val is not None,
