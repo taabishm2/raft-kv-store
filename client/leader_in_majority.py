@@ -9,30 +9,34 @@ def test1():
     # 
     print("======================================================")
 
-    client.send_put("Key1", "Val1")
-    client.send_get("Key1")
+    client.send_put("Partition_Key1", "Partition_Val1")
+    resp = client.send_get("Partition_Key1")
+    print(f"Got key=Partition_Key1, exists?={resp.key_exists}, val={resp.value}")
+    print(f"I think the leader is {client.LEADER_NAME}\n\n")
 
     partitioned_leader = client.LEADER_NAME
     client.send_remove_node(partitioned_leader)
 
-    print(f"I removed {client.LEADER_NAME} from cluster")
+    print(f"\nRemoved leader from cluster, haha.")
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
-    client.best_effort_put("Key2", "Val2")
+    client.best_effort_put("Partition_Key2", "Partition_Val2")
 
-    print(f"I think, the current leader is {client.LEADER_NAME}")
+    print(f"Put key=Partition_Key2, value=Partition_Val2")
+    print(f"Hmm, I think, the current leader is {client.LEADER_NAME}")
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
     client.send_add_node(partitioned_leader)
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
-    client.send_get("Key2")
+    resp = client.send_get("Partition_Key2")
+    print(f"Got key=Partition_Key2, exists?={resp.key_exists}, val={resp.value}")
     print(f"I think, the current leader is {client.LEADER_NAME}")
 
     print("Leader in minority parition test done!")
@@ -45,44 +49,43 @@ def test2():
     # Remove a follower node. Observe that PUT, GET succeeds.
     # Follower should keep triggering election with no vain.
     # After adding the same node back, it should become a follower.
-    # 
-    print("======================================================")
+    #
+    client.send_put("Partition_Key3", "Partition_Val3")
+    resp = client.send_get("Partition_Key3")
+    print(f"Got key=Partition_Key1, exists?={resp.key_exists}, val={resp.value}")
+    print(f"I think the leader is {client.LEADER_NAME}\n\n")
 
-    client.send_put("Key3", "Val3")
-    client.send_get("Key3")
-
-    print(f"I think, the current leader is {client.LEADER_NAME}")
     follower = client.get_follower()
-    print(f"Removing follower {follower}")
+    print(f"\nRemoving follower {follower}")
 
     client.send_remove_node(follower)
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
     # should succeed.
-    client.best_effort_put("Key2", "Val2")
+    client.best_effort_put("Partition_Key4", "Partition_Val4")
+    print("PUT key=Partition_Key4, value=Partition_Val4")
     print(f"I think, the current leader is {client.LEADER_NAME}")
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
     # Add the node back.
     # The node should become the leader.
     client.send_add_node(follower)
 
     print("\n\n\n")
-    sleep(20)
+    sleep(10)
 
-    client.send_get("Key2")
+    resp = client.send_get("Partition_Key4")
+    print(f"Got key=Partition_Key4, exists?={resp.key_exists}, val={resp.value}")
     print(f"I think, the current leader is {client.LEADER_NAME}")
     print("\n\n\n")
 
     print("Leader in majority parition test done!")
 
-    print("======================================================")
-
 
 if __name__ == '__main__':
-    test1()
+    # test1()
     test2()

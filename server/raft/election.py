@@ -44,7 +44,7 @@ class Election:
                     globals.current_term = response.term
                     globals.state = NodeRole.Follower
                     self.init_timeout()
-                    log_me(f'[PEER HEARTBEAT RESPONSE] {peer}, I am gonna step down.')
+                    log_me(f'Wait, I got a heart beat from {peer} with term {response.term}, I am gonna step down as leader :(')
                 # delta = time.time() - start
                 # time.sleep((globals.HB_TIME - delta) / 1000)
             log_me(f'♥ > {peer} {response.is_success} {response.term} 🥹')

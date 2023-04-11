@@ -38,6 +38,7 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
                         log_me(f"setting {keys[k]} and  {vals[k]}")
                         self.client.set(keys[k], vals[k])
                 else:
+                    log_me(f"applying {entry.cmd_key} entry.cmd_val")
                     self.client.set(entry.cmd_key, entry.cmd_val)
 
                 globals.set_last_applied(globals.commitIndex)

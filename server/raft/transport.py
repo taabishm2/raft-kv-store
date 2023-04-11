@@ -82,6 +82,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def handle_request_vote(self, request):
         if self.deny_vote(request):
+            log_me(f"Umm, I am not gonna vote for you {request.candidate_id}")
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
         if globals.current_term < request.last_log_term:
             globals.state = NodeRole.Follower
