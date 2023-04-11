@@ -8,15 +8,10 @@ from .stats import stats
 
 class RaftNode:
 
-    def serve_put_request(self, key, value):
+    def serve_put_request(self, key, value, is_multi_cmd=False):
         """Returns tuple: (success (bool), error message) TODO: Redirect to leader node."""
-        # if globals.is_unresponsive:
-        #     log_me("Am going to sleepzzzz")
-        #     while True:
-        #         sleep(1)
+        log_item = LogEntry(globals.current_term, key, value, is_multi_cmd)
 
-        log_item = LogEntry(globals.current_term, key, value)
-        log_me("Starting append")
         index = log_manager.append(log_item)
         log_me("Finished append")
 
@@ -26,7 +21,7 @@ class RaftNode:
         stats.add_commit_latency(transport.peer_ips, time.time() - t1, is_success_on_majority)
 
         if is_success_on_majority:
-            log_me("Setting commit index")
+            log_me(f"Updating commit index for {key}")
             globals.set_commit_index(index)
 
         log_me(f"Finished PUT {key}:{value} request ")

@@ -12,10 +12,11 @@ RAFT_LOG_DB_PATH = RAFT_BASE_DIR + '/stable_log.db'
 
 
 class LogEntry:
-    def __init__(self, term, cmd_key, cmd_val):
+    def __init__(self, term, cmd_key, cmd_val, is_multi_put=False):
         self.term = term
         self.cmd_key = cmd_key
         self.cmd_val = cmd_val
+        self.is_multi_put = is_multi_put
 
     def __str__(self):
         return f"({self.term}-{self.cmd_key}:{self.cmd_val})"

@@ -82,6 +82,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
 
     def handle_request_vote(self, request):
         if self.deny_vote(request):
+            log_me(f"Umm, I am not gonna vote for you {request.candidate_id}")
             return raft_pb2.VoteResponse(term=globals.current_term, vote_granted=False)
         if globals.current_term < request.last_log_term:
             globals.state = NodeRole.Follower
@@ -95,6 +96,7 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
         if (f"{request.candidate_id}:4000") not in transport.peer_ips:
             log_me(f"WARN: Received vote request from node {request.candidate_id}:4000 outside the cluster. Denying it!")
             return True
+        log_me(f"{request.candidate_id}, {request.term} and {request.last_log_index} wherehas {log_manager.get_latest_term()} and {log_manager.get_last_index()}")
         log_me(f"{request.candidate_id} vote condition 1:{globals.current_term} ==== {request.term} === {globals.current_term > request.term}")
         log_me(f"{request.candidate_id} vote condition 2: {globals.current_term == request.term and globals.voted_for is not None}")
         log_me(f"{request.candidate_id} vote condition 3: log_manager.get_latest_term() {log_manager.get_latest_term()} request.last_log_term== {request.last_log_term} ===== {log_manager.get_latest_term() > request.last_log_term}")
@@ -107,7 +109,11 @@ class RaftProtocolServicer(raft_pb2_grpc.RaftProtocolServicer):
     def AppendEntries(self, request, context):
         if (f"{request.leader_id}:4000") not in transport.peer_ips:
             log_me(f"WARN: Received AppendEntry/heartbeat from node {request.leader_id} outside the cluster. Ignoring it!")
-            return raft_pb2.AEResponse(is_success=False)
+            return raft_pb2.AEResponse(is_success=False, term=globals.current_term)
+        
+        if globals.current_term > request.term:
+            log_me(f"WARN: Received AppendEntry/heartbeat from a older node {request.leader_id}. Ignoring it!")
+            return raft_pb2.AEResponse(is_success=False, term=globals.current_term)
         if not request.is_heart_beat: log_me(f"AppendEntries from {request.leader_id}")
         # if globals.is_unresponsive:
         #     log_me("Am going to sleepzzzz")
@@ -222,7 +228,7 @@ class Transport:
         # Trivial failure case.
         # TODO: This index <= 0 is incorrect for first log entry
         if index < 0 or len(entries) == 0:
-            return 0, None
+            return 0, raft_pb2.AEResponse(is_success=False, term=globals.current_term)
 
         prev_index = index - 1
         prev_log_entry = log_manager.get_log_at_index(prev_index)
@@ -246,6 +252,8 @@ class Transport:
         resp = self.peer_stubs[peer_ip].AppendEntries(request, timeout=5)
 
         if not resp.is_success:
+            if resp.term > globals.current_term:
+                return 0, raft_pb2.AEResponse(is_success=False, term=resp.term)
             log_me(f"Log mismatch for {peer_ip}, going to index:{index - 1}")
             entries[1:] = entries
             entries[0] = prev_log_entry
