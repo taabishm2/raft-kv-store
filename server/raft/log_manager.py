@@ -65,7 +65,7 @@ class LogManager:
 
         with self.lock:
             self.entries[start_index:] = log_entry_list
-            # self.flush_many_log_to_disk(start_index, log_entry_list)
+            self.flush_many_log_to_disk(start_index, log_entry_list)
 
         return True
 

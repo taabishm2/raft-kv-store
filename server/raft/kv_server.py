@@ -10,6 +10,7 @@ from .log_manager import *
 from .node import raft_node
 from .utils import *
 from .stats import stats
+from .topological_sort import *
 
 sys.path.append('../../')
 import kvstore_pb2
@@ -66,6 +67,8 @@ class KVStoreServicer(kvstore_pb2_grpc.KVStoreServicer):
 
 
 def main(port=5440):
+    _, time = get_ordered_durability_logs()
+    print("time to sort", time)
     grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=1000000))
     kvstore_pb2_grpc.add_KVStoreServicer_to_server(KVStoreServicer(), grpc_server)
     grpc_server.add_insecure_port(f'[::]:{port}')
@@ -77,4 +80,4 @@ def main(port=5440):
 
 
 if __name__ == '__main__':
-    main()
+    main() 
