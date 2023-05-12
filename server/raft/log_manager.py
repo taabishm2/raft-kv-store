@@ -49,7 +49,7 @@ class LogManager:
         with self.lock:
             print("Adding to entries")
             self.entries.append(log_entry)
-            self.flush_log_to_disk()
+            # self.flush_log_to_disk()
 
             return len(self.entries) - 1
 
@@ -65,7 +65,7 @@ class LogManager:
 
         with self.lock:
             self.entries[start_index:] = log_entry_list
-            self.flush_many_log_to_disk(start_index, log_entry_list)
+            # self.flush_many_log_to_disk(start_index, log_entry_list)
 
         return True
 

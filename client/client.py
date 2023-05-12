@@ -82,8 +82,8 @@ def send_put(key, val):
     stub = kvstore_pb2_grpc.KVStoreStub(channel)
 
     resp = stub.Put(kvstore_pb2.PutRequest(key=key, value=val))
-    print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
-        {resp.redirect_server}")
+    # print(f"PUT {key}:{val} sent! Response error:{resp.error}, redirect:{resp.is_redirect}, \
+    #     {resp.redirect_server}")
     if resp.is_redirect:
         LEADER_NAME = resp.redirect_server
         return send_put(key, val)

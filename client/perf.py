@@ -161,7 +161,7 @@ def single_thread_throughput():
 
 
 if __name__ == "__main__":
-    perf_get_rpc_latency()
+    # perf_get_rpc_latency()
     # perf_put_rpc_latency()
     # perf_degradation()
     # #single_thread_throughput()
